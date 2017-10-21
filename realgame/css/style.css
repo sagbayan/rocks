@@ -1,0 +1,89 @@
+/* div classes */
+.Wrapper {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+    z-index: 0;
+    min-height: 576px;          /*min resolution for 16:9*/
+    min-width: 1024px;
+}
+
+.StageLeft {                    /*inside div, class=wrapper*/
+    background-color: #808080;  /*dark gray*/
+    position: absolute;
+	z-index: 1;
+    left: 0px;
+	top: 0px;
+	width: 40%;
+    height: 100%;
+	bottom: 0px;
+}
+
+.StageRight {                   /*inside div, class=wrapper*/
+    background-color: #C0C0C0;  /*light gray*/
+    position: absolute;
+    z-index: 1;
+	left: 40%;
+	top: 0px;
+	width: 60%;
+    height: 100%;
+	bottom: 0px;
+}
+
+.Statistics {                   /*inside div, stageLeft or stageRight*/
+    background-color: #FF0000;  /*red*/
+    z-index: 2;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 75px;
+    width: 380px;;
+}
+/*
+.StatisticsCanvas #statistics {
+    height: inherit;
+    width: inherit;
+    position: absolute;
+    border: 1px solid #000000;
+}*/
+
+.Menu {
+    background-color: #000080;  /*blue*/
+    z-index: 2;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 300px;
+    width: 380px;
+}
+
+.MenuOption {
+    background-color: #0000FF;  /*lighter blue*/
+    z-index: 3;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 75px;
+    width: 360px;
+}
+
+.StageLeftCanvas, .StageRightCanvas {
+    height: inherit;
+    width: 100%;
+    position: absolute;
+    border: 1px solid #000000;
+}
+
+canvas {
+    height: inherit;
+    width: inherit;
+    position: absolute;
+    border: 1px solid #000000;
+}
