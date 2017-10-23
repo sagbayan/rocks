@@ -74,6 +74,7 @@
     width: 360px;
 }
 
+/* generic canvas things */
 .StageLeftCanvas, .StageRightCanvas {
     height: inherit;
     width: 100%;
@@ -85,5 +86,12 @@ canvas {
     height: inherit;
     width: inherit;
     position: absolute;
+    border: 1px solid #000000;
+}
+
+.rock {
+    position: absolute;
+    height: 200px;
+    width: 200px;
     border: 1px solid #000000;
 }
