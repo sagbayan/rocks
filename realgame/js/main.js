@@ -1,5 +1,6 @@
-//"use strict";
+"use strict";
 /* eslint-env browser*/
+/* eslint-disable no-console */
 /* jslint browser*/
 
 /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -12,7 +13,7 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     
 
 var Preloader = function () {                       //object that holds and loads assets and resources
-    this.loadingstatus = 0;                         //trigger a function once loaded
+    this.loadingstatus = function () {};                         //trigger a function once loaded
     this.loadingdone = 0;                           //counts assets that have been queued up to load
     this.assetstoload = 0;                          //counts the assets to be loaded
     this.domain = "";                               //domain for assets.  will append filename of image in function
@@ -37,7 +38,6 @@ var Preloader = function () {                       //object that holds and load
             assetImage.src = this.domain + this.imageSrcArray[i];       //define src and alt text for images
             assetImage.alt = this.imageSrcArray[i];
             this.imageArray.push(assetImage);                           //push the image into the actual imageArray to be referenced to
-            console.log("imagearray = " + Main.Preloader.imageArray);
         }
     };
 };
@@ -110,36 +110,58 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.material_refined_copper = 0;
         
         //player's click
-        Main.player_mine_tier = 0;          //tier of mining ability (determines what ores can be mined)
-        Main.player_mine_strength = 0;      //strength of mining ability (determines how many "mines" per in-game click)
-        Main.player_mine_amount = 0;        //amount of cursors (determines how many in-game clicks per real-life click)
+        Main.player_mine_tier = 1;          //tier of mining ability (determines what ores can be mined)
+        Main.player_mine_strength = 1;      //strength of mining ability (determines how many "mines" per in-game click)
+        Main.player_mine_amount = 1;        //amount of cursors (determines how many in-game clicks per real-life click)
         
         //define objects to be used in the game
-        Main.Object = function (str_name, str_canvasParentid, str_imagename) {
+        Main.Object = function (objecttype, str_name, str_parentid, str_imagename, function_logic) {
+            this.objecttype = objecttype;               //determines type of object.  0 for image, 1 for text
             this.name = str_name;                          //identifying class name of object (from CSS)
-            this.canvasIndex = 0;                    //will assign index #.
             this.initialized = 0;                    //state that tells if the object has been initialized yet.  starts at 0
-            this.canvasParentid = str_canvasParentid;//parent element of the canvas.  tells where canvas should be on html
+            this.parentid = str_parentid;//parent element of the canvas.  tells where canvas should be on html
             this.imagename = str_imagename;                     //filename of image of object
             this.image = 0;                          //actual image from getImage function
+            this.logic = function_logic;                //function that will be performed every engine tick.  For image objects, this needs to update this.image!  For text, this just changes the value to go into text
             
-            while (this.initialized != 1) {
-                var e1;                                                      //create the canvas          
-                e1 = document.createElement("canvas");
-                e1.className = this.name;
-                document.getElementById(this.canvasParentid).appendChild(e1);       //appendChild canvas to the parent you gave
-                this.canvas = e1;
-                this.image = getImage(Main.Preloader, this.imagename);                              //define the image
-                this.initialized = 1;
-                console.log(this.name," has been initialized");
+            if (typeof this.logic === "undefined") {     //if they don't give a function for logic
+                this.logic = function () {};
+            }
+            
+            while (this.initialized !== 1) {
+                var e1, e2;
+                if (this.objecttype === 0) {    //if image       
+                    e1 = document.createElement("canvas");
+                    e1.className = this.name;
+                    document.getElementById(this.parentid).appendChild(e1);       //appendChild canvas to the parent you gave
+                    this.canvas = e1;
+                    this.image = getImage(Main.Preloader, this.imagename);                              //define the image
+                    this.initialized = 1;
+                    console.log(this.name, " has been initialized");
+                } else if (this.objecttype === 1) {     //if text
+                    e1 = document.createElement("span");
+                    e1.className = this.name;
+                    e2 = document.createTextNode("<blank>");
+                    e1.appendChild(e2);
+                    document.getElementById(this.parentid).appendChild(e1);
+                    this.textElement = e1;
+                    this.textvalue = e1.textContent;
+                    this.initialized = 1;
+                }
             }
             if (this.initialized === 1) {                                 //if object is initialized...
-                console.log("reeeee");
-                this.draw = function () {
-                    var ctx = this.canvas.getContext("2d");
-                    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                    ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height);
-                };
+                console.log("reeeee");                                      //perform these functions!
+                if (this.objecttype === 0) {                                //if image, clear the canvas and draw this.image
+                    this.draw = function () {
+                        var ctx = this.canvas.getContext("2d");
+                        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                        ctx.drawImage(this.image, 0, 0, this.canvas.width, this.canvas.height);
+                    };
+                } else if (this.objecttype === 1) {
+                    this.draw = function () {
+                        this.textElement.textContent = this.textElement.textvalue;      //if text, update the text value
+                    };
+                }
             }
         };
         
@@ -158,22 +180,66 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
         };
         
+        Main.object_rock_logic = function () {
+            //define variables
+            //check if initialized
+                //if not
+                    //if interactable object
+                        //check for listeners
+                            //if they don't have them, add them
+                            //set to initialized
+                //if it is
+                    //recalculate values controlled by listeners
+            
+            var i, element_rock;
+            element_rock = document.getElementsByClassName("rock");
+            for (i = 0; i < element_rock.length; i += 1) {
+                if (!element_rock[i].logicInitialized) {
+                    if (!element_rock[i].hasListener) {
+                        element_rock[i].addEventListener("click", function () {
+                            Main.mineOre(Main.player_mine_tier, Main.player_mine_strength, Main.player_mine_amount);
+                            console.log(Main.material_ore_copper);
+                        });
+                        element_rock[i].hasListener = 1;
+                        element_rock[i].logicInitialized = 1;
+                    }
+                }
+            }
+        };
+        
+        Main.object_oreCount_logic = function () {
+            var i, element_oreCount;
+            element_oreCount = document.getElementsByClassName("oreCount");
+            //console.log(element_oreCount.length);
+            for (i = 0; i < element_oreCount.length; i += 1) {
+                element_oreCount[i].textvalue = Main.material_ore_copper + Main.material_ore_iron;
+            }
+        };
+        
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Menu initialization functions
         ----------------------------------------------------------*/
+        Main.menuObjectInitialize = function (object) {
+            if (object.initialized) {
+                Main.menuObjectArray.push(object);
+            }
+        };
+        
         Main.buildMenu = function (statemenu) {             //function to initialize objects for a menu.  Only call if menuinitialized = 0
             Main.menuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
-                Main.menuTotalObjects = 1;                  //number of objects that need to be loaded for this specific menu
-                var e1 = new Main.Object("rock", "StageRight_1", "rock.png");       //assign each variable to a different object
-                if (e1.initialized) {
-                    Main.menuObjectArray.push(e1);          //put the object into the menuobject array
+                Main.menuTotalObjects = 2;                  //number of objects that need to be loaded for this specific menu
+                var e1, e2;
+                e1 = new Main.Object(0, "rock", "StageRight_1", "rock.png", Main.object_rock_logic);       //assign each variable to a different object
+                e2 = new Main.Object(1, "oreCount", "statisticsright", "no image", Main.object_oreCount_logic);
+                Main.menuObjectInitialize(e1);
+                Main.menuObjectInitialize(e2);
+                while (!Main.menuInitialized) {
+                    if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
+                        Main.menuInitialized = 1;               //declare menu is initialized    
+                    }
                 }
-                if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
-                    Main.menuInitialized = 1;               //declare menu is initialized    
-                }
-                
             }
         };
         
@@ -190,8 +256,18 @@ Main.pipeline = function () {         //this function contains the entire game a
     ----------------------------------------------------------*/
     Main.Engine = function () {     //this function listens for input and then processes it to change variables
         // listen for inputs
-        
+                                    //tell objects to listen
         // call functions to change variables based on inputs
+        if (Main.stateMenu === 0) {         //game is on the mining screen
+            if (!Main.menuInitialized) {            //if menu is not initialized, initialize it
+                Main.buildMenu(0);
+            } else {                                //if it is, then perform the logic function on all objects
+                var i;
+                for (i = 0; i < Main.menuObjectArray.length; i += 1) {
+                    Main.menuObjectArray[i].logic();
+                }
+            }
+        }
         // reset inputs
         Main.TickEngine += 1;       //add to tick count
     };
@@ -204,16 +280,13 @@ Main.pipeline = function () {         //this function contains the entire game a
         // Main.drawbackgrounds()
         //Draw object canvases
         if (Main.stateMenu === 0) {         //game is on the mining screen
-            if (!Main.menuInitialized) {            //if menu is not initialize, initialize it
-                Main.buildMenu(0);
-            } else {                                //if it is, then perform the draw function on all objects
+            if (Main.menuInitialized) {                               //if it is, then perform the draw function on all objects
                 var i;
                 for (i = 0; i < Main.menuObjectArray.length; i += 1) {
                     Main.menuObjectArray[i].draw();
                 }
             }
         }
-        //console.log(Main.menuObjectArray[0].draw);
         Main.tickRender += 1;        // add to tick count
         window.requestAnimationFrame(Main.Render);
     };

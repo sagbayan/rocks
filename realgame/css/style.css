@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css?family=Rajdhani');
+/*font-family: 'Rajdhani', sans-serif;*/
+
 /* div classes */
 .Wrapper {
     width: 100%;
@@ -89,9 +92,17 @@ canvas {
     border: 1px solid #000000;
 }
 
+/*images*/
 .rock {
     position: absolute;
     height: 200px;
     width: 200px;
     border: 1px solid #000000;
 }
+
+/*text objects*/
+.oreCount {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 30;
+}
+
