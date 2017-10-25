@@ -104,10 +104,10 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.money = 0;                 //sell shit, get money, buy more shit
         
         //second level currency
-        Main.material_ore_iron = 0;
-        Main.material_refined_iron = 0;
-        Main.material_ore_copper = 0;
-        Main.material_refined_copper = 0;
+        Main.material_ore_1_a = 0;
+        Main.material_refined_1_a = 0;
+        Main.material_ore_1_b = 0;
+        Main.material_refined_1_b = 0;
         
         //player's click
         Main.player_mine_tier = 1;          //tier of mining ability (determines what ores can be mined)
@@ -167,20 +167,21 @@ Main.pipeline = function () {         //this function contains the entire game a
         
         //functions to process input///////////////////////////////////
         Main.mineOre = function (tier, strength, amount) {                       //the method for clicking ONCE
-            var e1, chance_iron, chance_copper;
+            var e1, chance_1_b, chance_1_a;
             e1 = Math.random();                                     //roll a random decimal between 0-1
             if (tier === 1) {                                        //determine possible ore and probability based on tier of player/miner
-                chance_iron = e1 < 0.25;
-                chance_copper = e1 >= 0.25;
-                if (chance_iron) {                             //if dice roll wins iron
-                    Main.material_ore_iron += strength * amount;
-                } else if (chance_copper) {                         //if dice roll wins copper
-                    Main.material_ore_copper += strength * amount;
+                chance_1_b = e1 < 0.25;
+                chance_1_a = e1 >= 0.25;
+                if (chance_1_b) {                             //if dice roll wins iron
+                    Main.material_ore_1_b += strength * amount;
+                } else if (chance_1_a) {                         //if dice roll wins copper
+                    Main.material_ore_1_a += strength * amount;
                 }
             }
         };
         
-        Main.object_rock_logic = function () {
+        /*
+        coding scheme for Main.object_blank_logic = function (){
             //define variables
             //check if initialized
                 //if not
@@ -190,7 +191,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                             //set to initialized
                 //if it is
                     //recalculate values controlled by listeners
-            
+        }
+        */
+        Main.object_rock_logic = function () {
             var i, element_rock;
             element_rock = document.getElementsByClassName("rock");
             for (i = 0; i < element_rock.length; i += 1) {
@@ -198,7 +201,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                     if (!element_rock[i].hasListener) {
                         element_rock[i].addEventListener("click", function () {
                             Main.mineOre(Main.player_mine_tier, Main.player_mine_strength, Main.player_mine_amount);
-                            console.log(Main.material_ore_copper);
+                            console.log(Main.material_ore_1_a);
                         });
                         element_rock[i].hasListener = 1;
                         element_rock[i].logicInitialized = 1;
@@ -207,15 +210,31 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
         };
         
+        //logic for orecount text objects
         Main.object_oreCount_logic = function () {
             var i, element_oreCount;
-            element_oreCount = document.getElementsByClassName("oreCount");
+            element_oreCount = document.getElementsByClassName("oreCountTotal");
             //console.log(element_oreCount.length);
             for (i = 0; i < element_oreCount.length; i += 1) {
-                element_oreCount[i].textvalue = Main.material_ore_copper + Main.material_ore_iron;
+                element_oreCount[i].textvalue = Main.material_ore_1_a + Main.material_ore_1_b + " ores";
             }
         };
-        
+        Main.object_oreCount1_a_logic = function () {
+            var i, element_oreCount1_a;
+            element_oreCount1_a = document.getElementsByClassName("oreCount1_a");
+            //console.log(element_oreCount.length);
+            for (i = 0; i < element_oreCount1_a.length; i += 1) {
+                element_oreCount1_a[i].textvalue = Main.material_ore_1_a;
+            }
+        };
+        Main.object_oreCount1_b_logic = function () {
+            var i, element_oreCount1_b;
+            element_oreCount1_b = document.getElementsByClassName("oreCount1_b");
+            //console.log(element_oreCount.length);
+            for (i = 0; i < element_oreCount1_b.length; i += 1) {
+                element_oreCount1_b[i].textvalue = Main.material_ore_1_b;
+            }
+        };
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Menu initialization functions
         ----------------------------------------------------------*/
@@ -229,12 +248,16 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
-                Main.menuTotalObjects = 2;                  //number of objects that need to be loaded for this specific menu
-                var e1, e2;
-                e1 = new Main.Object(0, "rock", "StageRight_1", "rock.png", Main.object_rock_logic);       //assign each variable to a different object
-                e2 = new Main.Object(1, "oreCount", "statisticsright", "no image", Main.object_oreCount_logic);
+                Main.menuTotalObjects = 4;                  //number of objects that need to be loaded for this specific menu
+                var e1, e2, e3, e4;
+                e1 = new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic);       //assign each variable to a different object and call init
                 Main.menuObjectInitialize(e1);
+                e2 = new Main.Object(1, "oreCountTotal", "statistics_topholder", "no image", Main.object_oreCount_logic);
                 Main.menuObjectInitialize(e2);
+                e3 = new Main.Object(1, "oreCount1_a", "statistics_bottomholder", "no image", Main.object_oreCount1_a_logic);
+                Main.menuObjectInitialize(e3);
+                e4 = new Main.Object(1, "oreCount1_b", "statistics_bottomholder", "no image", Main.object_oreCount1_b_logic);
+                Main.menuObjectInitialize(e4);
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
                         Main.menuInitialized = 1;               //declare menu is initialized    

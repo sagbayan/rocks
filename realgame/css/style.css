@@ -1,5 +1,11 @@
 @import url('https://fonts.googleapis.com/css?family=Rajdhani');
 /*font-family: 'Rajdhani', sans-serif;*/
+::-moz-selection {
+    background:transparent;
+}
+::selection {
+    background:transparent;
+}
 
 /* div classes */
 .Wrapper {
@@ -21,7 +27,7 @@
 	z-index: 1;
     left: 0px;
 	top: 0px;
-	width: 40%;
+	width: 60%;
     height: 100%;
 	bottom: 0px;
 }
@@ -30,9 +36,9 @@
     background-color: #C0C0C0;  /*light gray*/
     position: absolute;
     z-index: 1;
-	left: 40%;
+	left: 60%;
 	top: 0px;
-	width: 60%;
+	width: 40%;
     height: 100%;
 	bottom: 0px;
 }
@@ -46,6 +52,24 @@
     margin-bottom: 10px;
     height: 75px;
     width: 380px;;
+}
+
+.Statistics_topholder {                   /*inside div, stageLeft or stageRight*/
+    background-color: #8B0000;  /*red*/
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    height: 37px;
+}
+
+.Statistics_bottomholder {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    background-color: #8B0000;  /*red*/
+    margin-left: auto;
+    margin-right: auto;
+    height: 37px;
 }
 /*
 .StatisticsCanvas #statistics {
@@ -95,13 +119,21 @@ canvas {
 /*images*/
 .rock {
     position: absolute;
+    margin-left: calc((100% - 200px)/2);
+    margin-right: calc((100% - 200px)/2);
+    margin-top: 100px;
     height: 200px;
     width: 200px;
     border: 1px solid #000000;
 }
 
 /*text objects*/
-.oreCount {
+.oreCountTotal {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 40;
+}
+
+.oreCount1_a, .oreCount1_b {
     font-family: 'Rajdhani', sans-serif;
     font-size: 30;
 }

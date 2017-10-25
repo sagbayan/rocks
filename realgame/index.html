@@ -8,10 +8,18 @@
 
 <body>
     <div class="Wrapper">
-        <div class="StageLeft">
+        <div class="StageLeft" id="StageLeft_1">
             <canvas class="StageLeftCanvas"></canvas>
             <div class="Statistics" id="statisticsleft">
                 <canvas class="StatisticsCanvas" id="statisticsleft_canvas"></canvas>
+                <div class="Statistics_topholder" id="statistics_topholder"></div>
+                <div class="Statistics_bottomholder" id="statistics_bottomholder"></div>
+            </div>
+        </div>
+        <div class="StageRight">
+            <canvas class="StageRightCanvas"></canvas>
+            <div class="Statistics" id="statisticsright_1">
+                <canvas class="StatisticsCanvas" id="statisticsright_canvas"></canvas>
             </div>
             <div class="Menu">
                 <canvas class="MenuCanvas"></canvas>
@@ -21,12 +29,6 @@
                 <div class="MenuOption" id="menuoption2">
                     <canvas class="MenuOptionCanvas" id="menuoption2_canvas"></canvas>
                 </div>
-            </div>
-        </div>
-        <div class="StageRight" id="StageRight_1">
-            <canvas class="StageRightCanvas"></canvas>
-            <div class="Statistics" id="statisticsright">
-                <canvas class="StatisticsCanvas" id="statisticsright_canvas"></canvas>
             </div>
         </div>
     </div>
