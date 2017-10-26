@@ -42,6 +42,16 @@
     height: 100%;
 	bottom: 0px;
 }
+.Information {                   /*inside div, stageLeft or stageRight*/
+    background-color: #00ff00;
+    z-index: 2;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 150px;
+    width: 380px;;
+}
 
 .Statistics {                   /*inside div, stageLeft or stageRight*/
     background-color: #FF0000;  /*red*/
@@ -70,6 +80,17 @@
     margin-left: auto;
     margin-right: auto;
     height: 37px;
+}
+
+.StatisticsDetail {                   /*inside div, stageLeft or stageRight*/
+    background-color: #FF0000;  /*red*/
+    z-index: 2;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 150px;
+    width: 380px;;
 }
 /*
 .StatisticsCanvas #statistics {
@@ -136,5 +157,15 @@ canvas {
 .oreCount1_a, .oreCount1_b {
     font-family: 'Rajdhani', sans-serif;
     font-size: 30;
+}
+
+.refinery_1 {
+    position: absolute;
+    margin-left: calc((100% - 200px)/2);
+    margin-right: calc((100% - 200px)/2);
+    margin-top: 100px;
+    height: 300px;
+    width: 400px;
+    border: 1px solid #000000;
 }
 

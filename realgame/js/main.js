@@ -8,7 +8,8 @@ Helper/shortcut functions
 ----------------------------------------------------------*/
 var imageSrcArrayReference = [      //reference for filenames for all images to be loaded
     "rock.png",
-    "background_mines.png"
+    "background_mines.png",
+    "refinery_1.png"
 ];
     
 
@@ -95,6 +96,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.stateMenu = 0;          //what screen is the game on. 0 = mining
         Main.menuInitialized = 0;    //tells if the menu is initialized or not.  starts at 0.
         Main.menuObjectArray = [];   //array that holds all the objects in a menu
+        Main.stateMenuChanging = 0;  //tells if the menu is currently being changed.
         
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Mining and shit
@@ -193,6 +195,10 @@ Main.pipeline = function () {         //this function contains the entire game a
                     //recalculate values controlled by listeners
         }
         */
+        
+        /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        Object functions: Mining menu
+        ----------------------------------------------------------*/
         Main.object_rock_logic = function () {
             var i, element_rock;
             element_rock = document.getElementsByClassName("rock");
@@ -235,6 +241,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 element_oreCount1_b[i].textvalue = Main.material_ore_1_b;
             }
         };
+        
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Menu initialization functions
         ----------------------------------------------------------*/
@@ -249,20 +256,51 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
                 Main.menuTotalObjects = 4;                  //number of objects that need to be loaded for this specific menu
-                var e1, e2, e3, e4;
-                e1 = new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic);       //assign each variable to a different object and call init
-                Main.menuObjectInitialize(e1);
-                e2 = new Main.Object(1, "oreCountTotal", "statistics_topholder", "no image", Main.object_oreCount_logic);
-                Main.menuObjectInitialize(e2);
-                e3 = new Main.Object(1, "oreCount1_a", "statistics_bottomholder", "no image", Main.object_oreCount1_a_logic);
-                Main.menuObjectInitialize(e3);
-                e4 = new Main.Object(1, "oreCount1_b", "statistics_bottomholder", "no image", Main.object_oreCount1_b_logic);
-                Main.menuObjectInitialize(e4);
+                
+                Main.menuObjectInitialize(new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic));
+                Main.menuObjectInitialize(new Main.Object(1, "oreCountTotal", "statistics_topholder", "no image", Main.object_oreCount_logic));
+                Main.menuObjectInitialize(new Main.Object(1, "oreCount1_a", "statistics_bottomholder", "no image", Main.object_oreCount1_a_logic));
+                Main.menuObjectInitialize(new Main.Object(1, "oreCount1_b", "statistics_bottomholder", "no image", Main.object_oreCount1_b_logic));
+                
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
                         Main.menuInitialized = 1;               //declare menu is initialized    
                     }
                 }
+            }
+            if (statemenu === 1) {                              //if requested to initialize mining menu...
+                Main.menuTotalObjects = 1;                  //number of objects that need to be loaded for this specific menu
+                
+                Main.menuObjectInitialize(new Main.Object(0, "refinery_1", "StageLeft_1", "refinery_1.png", Main.object_rock_logic));
+                
+                while (!Main.menuInitialized) {
+                    if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
+                        Main.menuInitialized = 1;               //declare menu is initialized    
+                    }
+                }
+            }
+        };
+        
+        Main.clearMenu = function () {          //function to clear the menu (before switching menu)
+            var i, j, target, parent, children;
+            for (i = 0; i < Main.menuObjectArray.length; i += 1) {      //loop through every object in the object array and delete the elements
+                target = Main.menuObjectArray[i];                           //set the target object
+                parent = document.getElementById(target.parentid);          //get the parent element from target object
+                children = document.getElementsByClassName(target.name);    //find the children (array) by class name
+                for (j = 0; j < children.length; j += 1) {              //loop through all children
+                    console.log("deleting ", children[j]);
+                    parent.removeChild(children[j]);                        //KILL THEM ALL, JOHNNY
+                }
+            }
+            Main.menuInitialized = 0;                                   //declare the menu not initialized
+        };
+        
+        Main.changeToMenu = function (statemenu_next) {
+            Main.stateMenuChanging = 1;             //declare that the menu is currently being changed
+            Main.clearMenu();                       //clear menu of all objects and elements specific to menu
+            if (Main.menuInitialized === 0) {
+                Main.stateMenu = statemenu_next;
+                Main.stateMenuChanging = 0;              //declare changing is done and engine can rebuild the menu again
             }
         };
         
@@ -281,13 +319,15 @@ Main.pipeline = function () {         //this function contains the entire game a
         // listen for inputs
                                     //tell objects to listen
         // call functions to change variables based on inputs
-        if (Main.stateMenu === 0) {         //game is on the mining screen
-            if (!Main.menuInitialized) {            //if menu is not initialized, initialize it
-                Main.buildMenu(0);
-            } else {                                //if it is, then perform the logic function on all objects
-                var i;
-                for (i = 0; i < Main.menuObjectArray.length; i += 1) {
-                    Main.menuObjectArray[i].logic();
+        if (!Main.stateMenuChanging) {              //if menu is not currently going through change...
+            if (Main.stateMenu === 0) {         //game is on the mining screen
+                if (!Main.menuInitialized) {            //if menu is not initialized, initialize it
+                    Main.buildMenu(0);
+                } else {                                //if it is, then perform the logic function on all objects
+                    var i;
+                    for (i = 0; i < Main.menuObjectArray.length; i += 1) {
+                        Main.menuObjectArray[i].logic();
+                    }
                 }
             }
         }
