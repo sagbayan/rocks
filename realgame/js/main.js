@@ -56,7 +56,7 @@ var getImage = function (preloaderobject, string_name) {                        
     e1 = preloaderobject;
     e2 = preloaderobject.imageSrcArray;
     e3 = e2.indexOf(string_name);     //find the index of the image you are looking for by filename
-    console.log(e1.imageArray[e3]);
+    //console.log(e1.imageArray[e3]);
     return e1.imageArray[e3];
 };
 
@@ -304,6 +304,18 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
         };
         
+        //draw backgrounds
+        Main.drawBackgrounds = function () {
+            var canvas_stageleft, ctx_stageleft, image_stageleft;
+            canvas_stageleft = document.getElementsByClassName("StageLeftCanvas");
+            if (Main.stateMenu === 0) {
+                image_stageleft = getImage(Main.Preloader, "background_mines.png");
+            }
+            ctx_stageleft = canvas_stageleft[0].getContext("2d");
+            ctx_stageleft.clearRect(0, 0, canvas_stageleft[0].width, canvas_stageleft[0].height);
+            ctx_stageleft.drawImage(image_stageleft, 0, 0, canvas_stageleft[0].width, canvas_stageleft[0].height);
+        };
+        
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         COMPLETE INITIALIZATION
         ----------------------------------------------------------*/
@@ -340,7 +352,7 @@ Main.pipeline = function () {         //this function contains the entire game a
     ----------------------------------------------------------*/
     Main.Render = function () {     //this function renders the game
         // do rendering functions
-        // Main.drawbackgrounds()
+        Main.drawBackgrounds();
         //Draw object canvases
         if (Main.stateMenu === 0) {         //game is on the mining screen
             if (Main.menuInitialized) {                               //if it is, then perform the draw function on all objects
