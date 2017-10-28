@@ -197,7 +197,8 @@ canvas {
 }
 
 /*refinery slots*/
-.refineryslotscontainer {
+.menurefinerycontainer {
+    background-color: #000080;
     position: absolute;
     width: 400px;
     height: 300px;
@@ -209,14 +210,19 @@ canvas {
     height: 150px
 }
 
-.refineryslot_state0_div {
-    
-}
-.refineryslot_state0_span {
+.refineryslot_div0, .refineryslot_div1, .refineryslot_div3 {
     
 }
 
-.refineryslot_state1_div {
+.refineryslot_div1_input {
     
 }
-
+.refineryslot_div2_input {
+    
+}
+.refineryslot_div2_imgall {
+    
+}
+.refineryslot_div3_span1, .refineryslot_div3_span2 {
+    
+}

@@ -11,7 +11,11 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     "background_mines.png",
     "refinery_1.png",
     "button_mines.png",
-    "button_refinery.png"
+    "button_refinery.png",
+    "cancel.png",
+    "icon_refinery_ore1a.png",
+    "icon_refinery_all.png",
+    "icon_refinery_refill.png"
 ];
     
 
@@ -120,18 +124,18 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.player_mine_amount = 1;        //amount of cursors (determines how many in-game clicks per real-life click)
         
         //refinery
+        Main.refineryObjectArray = [];      //array that holds refinery objects.  updated on every tick, on every screen
         Main.player_refinery_tier = 1;      //tier of refinery.  determines what ore can be smelted
         Main.player_refinery_rate = 1;      //rate per sec that ore is smelted
         Main.player_refinery_slotcount = 1; //number of smelting slots player can have
-        Main.player_refinery_slotsArray = [];     //slots for smelting. object array holding slots
-        
+        Main.player_refinery_initialized = 0;   //determines if the refineryObjectArray is ready. starts at 0.
         
         //define objects to be used in the game
         Main.Object = function (objecttype, str_name, str_parentid, str_imagename, function_logic, function_draw) {
             this.objecttype = objecttype;               //determines type of object.  0 for image, 1 for text
             this.name = str_name;                          //identifying class name of object (from CSS)
             this.initialized = 0;                    //state that tells if the object has been initialized yet.  starts at 0
-            this.parentid = str_parentid;//parent element of the canvas.  tells where canvas should be on html
+            this.parentid = str_parentid;   //parent element.  tells where new element should be on html
             this.imagename = str_imagename;                     //filename of image of object
             this.image = 0;                          //actual image from getImage function
             this.logic = function_logic;                //function that will be performed every engine tick.  For image objects, this needs to update this.image!  For text, this just changes the value to go into text
@@ -266,115 +270,218 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         
         //refinery, refinery slots
-        Main.object_refineryslot_logic = function (target_object_refineryslot) {
-            var target, parentdiv, div0, div1, div2, div3, div4, div0_span;
-            target = target_object_refineryslot;             //define the target refineryslot object (it's a Main.object_refineryslot)
-            parentdiv = document.getElementById("refineryslot_"+target.slotindex);      //define the parent div element holding the refinery slot
-            if (!target.initialized) {
-                div0 = document.createElement("div");
-                div0.className = "refineryslot_state0_div";
-                div0_span = document.createElement("span");
-                div0_span.className = "refineryslot_state0_span";
-                div0.appendChild(div0_span);
-                div0.addEventListener("click", function () {target.state = 1})
-                parentdiv.appendChild(div0);
-                
-                div1 = document.createElement("div");
-                div1.className = "refineryslot_state1_div";
+        Main.player_refinery_initialization = function () {     //function to initialize the refinery function so logic can be called
+            var e, newslotindex;
+            if (!Main.player_refinery_initialized) {     //if refinery is not initialized...
+                while (Main.refineryObjectArray.length < Main.player_refinery_slotcount) {      //refinery array hasn't been populated yet completely.  so populate it.
+                    newslotindex = Main.refineryObjectArray.length;  //(works, because it starts at 0)
+                    e = new Main.objectauto_refiner();      //create new refiner object
+                    e.slotindex = newslotindex;
+                    e.logic = Main.objectauto_refiner_logic(e);
+                    e.initialized = 1;
+                    if (e.initialized === 1) {                //declare object is initialized
+                        Main.refineryObjectArray.push(e);       //push it into refinery object array
+                    }                      
+                }
+                if (Main.refineryObjectArray.length === Main.player_refinery_slotcount) {   //if the array is equal to slot count entitled to player
+                    Main.player_refinery_initialized = 1;        //declare the refinery array initialized
+                    console.log("player_refinery initialized!!!");
+                }
             }
-            //check if initialized
-                //if not, parent div is currently empty.
-                    //create the subdivs (5, for each state 0-4)
-                    //populate subdivs with content
-                        //state 0
-                            //create "empty" span text
-                            //create event listener for click
-                        //state 1
-                            //create input box to select ore
-                            //create img element for Cancel button
-                                //create event listener for click -> go back to state 0
-                        //state 2
-                            //create img element for ore chosen previously
-                            //create input box for adding to queue from previously chosen ore
-                            //create button to add all available qty from previously chosen ore
-                            //create img element for Cancel button
-                                //create event listener for click -> go back to state 0
-                        //state 3
-                            //create span for what is being smelted
-                            //create span for how many are left
-                            //create img element for refill button
-                            //create img element for Cancel button
-                                //create event listener for click -> go back to state 0
-                        //state 4
-                            //create img element for ore chosen previously
-                            //create input box for adding to queue from previously chosen ore
-                            //create button to add all available qty from previously chosen ore
-                            //create img element for Cancel button
-                                //create event listener for click -> go back to state 3
-                    //declare initialized
-                //if it is, perform the logic function
-                    //
-            
         };
         
-        Main.object_refineryslot = function (function_logic) {
+        Main.objectauto_refiner = function () {
             this.tier = Main.player_refinery_tier;      //what ore can be chosen for smelting in this slot
             this.rate = Main.player_refinery_rate;      //how fast this slot can refine ore
-            this.state = 0;                             //what stage the submenu is on.  starts at zero
+            this.state = 0;                             //used for menu states
             this.initialized = 0;                       //tells if the object is initialized (menu set up, etc).
             this.current_queue = 0;                     //tells how many ore is queued up
-            this.current_ore = 0;                       //tells which ore is being/going to be smelted
+            this.current_ore = undefined;                       //tells which ore is being/going to be smelted
             this.smeltingactive = 0;                            //tells if slot is currently smelting something
             this.lasttime = Main.time.getTime();        //define time this was last on page (for updating)
-            this.logic = function_logic;                //define the logic function callback
             this.slotindex = 0;
-            /*
-            if (!this.current_queue) {                   //if nothing is in queue, then slot is empty. reset values
-                this.state = 0;
-                this.current_ore = 0;
-                this.smeltingactive = 0;
+        };
+
+        Main.objectauto_refiner_logic = function (objectauto_refiner) {
+            var e, difference;
+            e = objectauto_refiner;     //define the object refiner that will be updated with this function
+            
+            if (e.initialized) {        //if object is initialized...
+                if (e.state === 0) {         //Empty menu, defaults all values
+                    e.current_queue = 0;
+                    e.current_ore = undefined;
+                    e.smeltingactive = 0;
+                }
+                //state 1: container will define current_ore
+                //state 2: container define current_queue
+                //state 3: smelt ore based on current_ore and current_queue.
+                //state 4: smelt ore based on current_ore and current_queue. container will add to current_queue
+                if (e.state === 3 || e.state === 4) {     //if there is an ore chosen and ores queued up, then turn on the furnace
+                    e.smeltingactive = 1;
+                    e.current_queue -= e.rate;        //remove an amount from the queue
+                    if (e.current_queue >= 0) {          //if that did not make the queue negative, perform mining operation
+                        if (e.current_ore === "1_a") {
+                            setTimeout(function () {
+                                Main.material_ore_1_a -= e.rate;     //smelt an ore from the player's stock
+                                Main.material_refined_1_a += e.rate;     //add it to the player's refined stock
+                            }, 1000 / e.rate);               //rate = ore/sec
+                        } else if (e.current_ore === "1_b") {
+                            setTimeout(function () {
+                                Main.material_ore_1_b -= e.rate;     //smelt an ore from the player's stock
+                                Main.material_refined_1_b += e.rate;     //add it to the player's refined stock
+                            }, 1000 / e.rate);               //rate = ore/sec
+                        }
+                    } else if (e.current_queue < 0) {    //if this makes queue negative
+                        difference = e.current_queue + e.rate;        //calculate negative queue PLUS the rate
+                        if (difference > 0) {       //if this results in a positive number, then there is still ore to smelt
+                            if (e.current_ore === "1_a") {
+                                Main.material_ore_1_a -= difference;    //this should make it 0
+                                Main.material_ore_1_a += difference;
+                            } else if (e.current_ore === "1_b") {
+                                Main.material_ore_1_b -= difference;    //this should make it 0
+                                Main.material_ore_1_b += difference;
+                            }
+                        } else {    //if the difference is 0 or less, then you have nothing to smelt!
+                            e.state = 0;         //reset state to 0
+                        }
+                    }
+                }
             }
-            if (this.state === 0) {                     
-                
-            }*/
         };
         
-        Main.object_refineryslotscontainer_logic = function () {
-            var element_refineryslotscontainer, i, e;
-            element_refineryslotscontainer = document.getElementsByClassName("refineryslotscontainer");
-            if (!element_refineryslotscontainer[0].logicInitialized) {   //if not initialized (just a blank div with nothing in it)
-                //initialize the div
-                    //check if slotsarray length is equal to player slot's count
-                        //if it isn't, create slot objects and push them into the array until it is
-                        //if it is, do nothing
-                    //for every slot the player has, create a div and append it to this one
-                    //initialize these subdivs
-                        //assign a slot object to a div
-                if (!Main.player_refinery_slotsArray.length === Main.player_refinery_slotcount) {           //check if slots have already been loaded into the slotsarray
-                    for (i = 0; i < Main.player_refinery_slotcount; i += 1) {           //if not, load them based on player's slot count
-                        e = new Main.object_refineryslot();                                 //create new slot object
-                        e.slotindex = i;                                                    //assign it to a div by number
-                        Main.player_refinery_slotsArray.push(e);                            //push it into array
+        Main.object_menurefinerycontainer_logic = function () {
+            var refineryObjectArray, element_menurefinerycontainer, i, j, e, parentdiv, div0, div0_span, div1, div1_input, div1_imgcancel, div2, div2_imgore, div2_input, div2_imgall, div2_imgcancel, div3, div3_span1, div3_span2, div3_imgrefill, div3_imgcancel, div4, div4_imgore, div4_input, div4_imgall, div4_imgcancel;
+            element_menurefinerycontainer = document.getElementsByClassName("menurefinerycontainer");
+            refineryObjectArray = Main.refineryObjectArray;
+            if (!element_menurefinerycontainer[0].logicInitialized) {       //if refinery container is not initialized (just a blank div)
+                if (Main.player_refinery_initialized) {     //only begin initialization if the refinery array is initialized
+                    for (i = 0; i < refineryObjectArray.length; i += 1) {      //for every refinery object in array...
+                        console.log("BUBURBSR i = ", i);
+                        parentdiv = document.createElement("div");      //create empty div
+                        parentdiv.className = "refineryslotClass";      //define class type for div
+                        parentdiv.id = "refineryslot_" + i;               //define id for specific div based on which refiner it is
+                        //populate subdivs with content
+                        //state = 0
+                        div0 = document.createElement("div");        //create div0 for state 0 menu
+                        div0.className = "refineryslot_div0";
+                        div0.id = "refineryslot_div0_" + i;
+                        div0_span = document.createElement("span");    //create "empty" span text
+                        div0_span.innerHTML = "Empty.";
+                        div0.addEventListener("click", function () {    //create event listener for click
+                            console.log("BUBURBSR i = ", i);
+                            refineryObjectArray[i].state = 1;
+                        });
+                        div0.appendChild(div0_span);    //append span to div0
+                        parentdiv.appendChild(div0);    //append div0 to parentdiv
+                        
+                        //state = 1
+                        div1 = document.createElement("div");   //create div1 for state 1 menu
+                        div1.className = "refineryslot_div1";
+                        div1.id = "refineryslot_div1_" + i;
+                        div1_input = document.createElement("select");    //create input box to select ore
+                        div1_input.className = "refineryslot_div1_input";
+                        div1_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img element for Cancel button
+                        div1_imgcancel.addEventListener("click", function () {
+                            console.log(refineryObjectArray[0].state, i);
+                            Main.refineryObjectArray[i].state = 0;
+                        });        //create event listener for click -> go back to state 0
+                        div1.appendChild(div1_input);    //append input box, img element to div1
+                        div1.appendChild(div1_imgcancel);
+                        parentdiv.appendChild(div1);    //append div1 to parentdiv
+                        
+                        //state = 2
+                        div2 = document.createElement("div");   //create div2 for state 2 menu
+                        div2.className = "refineryslot_div2";
+                        div2.id = "refineryslot_div2_" + i;
+                        div2_imgore = getImage(Main.Preloader, "icon_refinery_ore1a.png");    //create img element for ore chosen previously
+                        div2_imgore.className = "refineryslot_div2_imgore";
+                        div2_input = document.createElement("select");    //create input box for adding to queue from previously chosen ore
+                        div2_input.className = "refineryslot_div2_input";
+                        div2_imgall = getImage(Main.Preloader, "icon_refinery_all.png");    //create button to add all available qty from previously chosen ore
+                        div2_imgall.className = "refineryslot_div2_imgall";
+                        div2_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img element for Cancel button
+                        div2_imgcancel.addEventListener("click", function () {
+                            Main.refineryObjectArray[i].state = 0;
+                        });        //create event listener for click -> go back to state 0
+                        div2.appendChild(div2_imgcancel);    //append img, input box, button, and cancel to div2
+                        div2.appendChild(div2_input);
+                        div2.appendChild(div2_imgore);
+                        div2.appendChild(div2_imgall);
+                        parentdiv.appendChild(div2);    //append div2 to parentdiv
+                        
+                        //state = 3
+                        div3 = document.createElement("div");   //create div3 for state 3 menu
+                        div3.className = "refineryslot_div3";
+                        div3.id = "refineryslot_div3_" + i;
+                        div3_span1 = document.createElement("span");    //create span1 for what is being smelted
+                        div3_span1.className = "refineryslot_div3_span1";
+                        div3_span2 = document.createElement("span");    //create span2 for how many are left
+                        div3_span2.className = "refineryslot_div3_span2";
+                        div3_imgrefill = getImage(Main.Preloader, "icon_refinery_refill.png");    //create img1 element for refill button
+                        div3_imgrefill.addEventListener("click", function () {
+                            Main.refineryObjectArray[i].state = 4;
+                        });
+                        div3_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img2 element for Cancel button
+                        div3_imgcancel.addEventListener("click", function () {
+                            Main.refineryObjectArray[i].state = 0;
+                        });        //create event listener for click -> go back to state 0
+                        div3.appendChild(div3_span1);    //append span1, span2, img1, img2 to div3
+                        div3.appendChild(div3_span2);
+                        div3.appendChild(div3_imgrefill);
+                        div3.appendChild(div3_imgcancel);
+                        parentdiv.appendChild(div3);    //append div3 to parentdiv
+                        
+                        //state = 4
+                        div4 = document.createElement("div");   //create div4 for state 4 menu
+                        div4.className = "refineryslot_div4";
+                        div4.id = "refineryslot_div4_" + i;
+                        div4_imgore = getImage(Main.Preloader, "icon_refinery_ore1a.png");    //create img1 element for ore chosen previously
+                        div4_imgore.className = "refineryslot_div4_imgore";
+                        div4_input = document.createElement("input");    //create input box for adding to queue from previously chosen ore
+                        div4_input.setAttribute("type", "number");
+                        div4_input.className = "refineryslot_div4_input";
+                        div4_imgall = getImage(Main.Preloader, "icon_refinery_all.png");    //create button to add all available qty from previously chosen ore
+                        div4_imgall.className = "refineryslot_div4_imgall";
+                        div4_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img2 element for Cancel button
+                        div4_imgcancel.addEventListener("click", function () {
+                            Main.refineryObjectArray[i].state = 0;
+                        });         //create event listener for click -> go back to state 3
+                        div4.appendChild(div4_imgore);    //append img1, input box, button, img2 to div4
+                        div4.appendChild(div4_imgall);
+                        div4.appendChild(div4_input);
+                        div4.appendChild(div4_imgcancel);
+                        parentdiv.appendChild(div4);    //append div4 to parentdiv
+                        
+                        element_menurefinerycontainer[0].appendChild(parentdiv);    //append parentdiv to the container
                     }
-                } else {        //if slotsarray is loaded
-                    for (i = 0; i < Main.player_refinery_slotsArray.length; i += 1) {   //for every slot the player has...
-                        e = document.createElement("div");      //create a div
-                        e.className = "refineryslotClass";
-                        e.id = "refineryslot_"+i;                        //give it a string that tells what slot it's for (index number in array)
-                        element_refineryslotscontainer[0].appendChild(e);   //append the div to the container
-                    }
-                    element_refineryslotscontainer[0].logicInitialized = 1;     //declare the container initialized (it is now a div containing empty divs assigned to a slot)
+                    element_menurefinerycontainer[0].logicInitialized = 1;  //divs and elements have been created and assigned to an object by ID, it is initialized
                 }
             } else {            //if initialized
-                //loop through every div element containing a slot
-                //perform the slot's logic function
-                for (i = 0; i < Main.player_refinery_slotsArray.length; i += 1) {       //loop through all slots
-                    Main.player_refinery_slotsArray[i].logic();     //perform the logic function to update the slots
+                for (j = 0; j < refineryObjectArray.length; j += 1) {       //for every refinery slot....
+                    e = refineryObjectArray[j];
+                    //if state 0
+                        //show div 0
+                        //hide div 1,2,3,4
+                    //if state 1
+                    if (e.state === 0) {
+                        document.getElementById("refineryslot_div0_" + j).style.display = "block";
+                        document.getElementById("refineryslot_div1_" + j).style.display = "none";
+                        document.getElementById("refineryslot_div2_" + j).style.display = "none";
+                        document.getElementById("refineryslot_div3_" + j).style.display = "none";
+                        document.getElementById("refineryslot_div4_" + j).style.display = "none";
+                    }
+                    if (e.state === 1) {
+                        document.getElementById("refineryslot_div0_" + j).style.display = "none";
+                        document.getElementById("refineryslot_div1_" + j).style.display = "block";
+                        document.getElementById("refineryslot_div2_" + j).style.display = "none";
+                        document.getElementById("refineryslot_div3_" + j).style.display = "none";
+                        document.getElementById("refineryslot_div4_" + j).style.display = "none";
+                    }
                 }
             }
         };
         
-        Main.object_refineryslotscontainer_draw = function () {
+        Main.object_menurefinerycontainer_draw = function () {
             
         };
         
@@ -443,7 +550,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 Main.menuObjectInitialize(new Main.Object(1, "oreCount1_b", "statistics_bottomholder", "no image", Main.object_oreCount1_b_logic));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "refinery_1", "StageLeft_1", "refinery_1.png", Main.object_rock_logic));
-                Main.menuObjectInitialize(new Main.Object(2, "refineryslotscontainer", "StageLeft_1", "no image", Main.object_refineryslotscontainer_logic, Main.object_refineryslotscontainer_draw));
+                Main.menuObjectInitialize(new Main.Object(2, "menurefinerycontainer", "StageLeft_1", "no_image", Main.object_menurefinerycontainer_logic, Main.object_menurefinerycontainer_draw));
                 
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
@@ -505,11 +612,11 @@ Main.pipeline = function () {         //this function contains the entire game a
     Define the method to receive and process input
     ----------------------------------------------------------*/
     Main.Engine = function () {     //this function listens for input and then processes it to change variables
+        var i;
         // listen for inputs
                                     //tell objects to listen
         // call functions to change variables based on inputs
         if (!Main.stateMenuChanging) {              //if menu is not currently going through change...
-            var i;
             if (Main.stateMenu === 0) {         //game is on the mining screen
                 if (!Main.menuInitialized) {            //if menu is not initialized, initialize it
                     Main.buildMenu(0);
@@ -529,6 +636,18 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             }
         }
+        //update auto units
+        if (!Main.player_refinery_initialized) {        //if the refinery is not initialized...
+            Main.player_refinery_initialization();          //initialize it
+        } else {                                        //if it is initialized...
+            if (Main.refineryObjectArray.length < Main.player_refinery_slotcount) {
+                Main.player_refinery_initialized = 0;       //if player gets a new slot, declare not initialized
+            }
+            for (i = 0; i < Main.refineryObjectArray.length; i += 1) {  //loop through the refinery object array and update the miners
+                Main.refineryObjectArray[i].logic;        //
+            }
+        }
+        
         // reset inputs
         Main.TickEngine += 1;       //add to tick count
     };
