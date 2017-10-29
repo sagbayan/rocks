@@ -1,7 +1,14 @@
+/* eslint-env browser, es6*/
+/* eslint-disable no-console*/
+/*jshint
+    browser: true,
+    esversion: 6,
+    -W097,
+    -W083,
+    -W117
+*/
 "use strict";
-/* eslint-env browser*/
-/* eslint-disable no-console */
-/* jslint browser*/
+
 
 /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 Helper/shortcut functions
@@ -38,7 +45,7 @@ var Preloader = function () {                       //object that holds and load
             assetImage.onload = function () {
                 progress -= 1;
                 if (progress <= 0) {
-                    this.loadingstatus;           //trigger loading status
+                    this.loadingstatus;           /* jshint ignore:line */ //trigger loading status
                     this.loadingdone = 1;           //declare loading is done
                 }
             };
@@ -281,7 +288,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                     e.initialized = 1;
                     if (e.initialized === 1) {                //declare object is initialized
                         Main.refineryObjectArray.push(e);       //push it into refinery object array
-                    }                      
+                    }
                 }
                 if (Main.refineryObjectArray.length === Main.player_refinery_slotcount) {   //if the array is equal to slot count entitled to player
                     Main.player_refinery_initialized = 1;        //declare the refinery array initialized
@@ -350,12 +357,17 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         
         Main.object_menurefinerycontainer_logic = function () {
-            var refineryObjectArray, element_menurefinerycontainer, i, j, e, parentdiv, div0, div0_span, div1, div1_input, div1_imgcancel, div2, div2_imgore, div2_input, div2_imgall, div2_imgcancel, div3, div3_span1, div3_span2, div3_imgrefill, div3_imgcancel, div4, div4_imgore, div4_input, div4_imgall, div4_imgcancel;
+            var refineryObjectArray, element_menurefinerycontainer, j, e, parentdiv,
+                div0, div0_span,
+                div1, div1_input, div1_imgcancel, div1_input_option1_a, div1_input_option1_b,
+                div2, div2_imgore, div2_input, div2_imgall, div2_imgcancel,
+                div3, div3_span1, div3_span2, div3_imgrefill, div3_imgcancel,
+                div4, div4_imgore, div4_input, div4_imgall, div4_imgcancel;
             element_menurefinerycontainer = document.getElementsByClassName("menurefinerycontainer");
             refineryObjectArray = Main.refineryObjectArray;
             if (!element_menurefinerycontainer[0].logicInitialized) {       //if refinery container is not initialized (just a blank div)
                 if (Main.player_refinery_initialized) {     //only begin initialization if the refinery array is initialized
-                    for (i = 0; i < refineryObjectArray.length; i += 1) {      //for every refinery object in array...
+                    for (let i = 0; i < refineryObjectArray.length; i += 1) {      //for every refinery object in array...
                         console.log("BUBURBSR i = ", i);
                         parentdiv = document.createElement("div");      //create empty div
                         parentdiv.className = "refineryslotClass";      //define class type for div
@@ -380,10 +392,13 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div1.id = "refineryslot_div1_" + i;
                         div1_input = document.createElement("select");    //create input box to select ore
                         div1_input.className = "refineryslot_div1_input";
+                        div1_input.id = "refineryslot_div1_input_" + i;
                         div1_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img element for Cancel button
+                        console.log(div1_imgcancel);
+                        div1_imgcancel.className = "refineryslot_cancelbutton";
                         div1_imgcancel.addEventListener("click", function () {
                             console.log(refineryObjectArray[0].state, i);
-                            Main.refineryObjectArray[i].state = 0;
+                            refineryObjectArray[i].state = 0;
                         });        //create event listener for click -> go back to state 0
                         div1.appendChild(div1_input);    //append input box, img element to div1
                         div1.appendChild(div1_imgcancel);
@@ -397,11 +412,12 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div2_imgore.className = "refineryslot_div2_imgore";
                         div2_input = document.createElement("select");    //create input box for adding to queue from previously chosen ore
                         div2_input.className = "refineryslot_div2_input";
+                        div2_input.id = "refineryslot_div2_input_" + i;
                         div2_imgall = getImage(Main.Preloader, "icon_refinery_all.png");    //create button to add all available qty from previously chosen ore
                         div2_imgall.className = "refineryslot_div2_imgall";
                         div2_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img element for Cancel button
                         div2_imgcancel.addEventListener("click", function () {
-                            Main.refineryObjectArray[i].state = 0;
+                            refineryObjectArray[i].state = 0;
                         });        //create event listener for click -> go back to state 0
                         div2.appendChild(div2_imgcancel);    //append img, input box, button, and cancel to div2
                         div2.appendChild(div2_input);
@@ -419,11 +435,11 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div3_span2.className = "refineryslot_div3_span2";
                         div3_imgrefill = getImage(Main.Preloader, "icon_refinery_refill.png");    //create img1 element for refill button
                         div3_imgrefill.addEventListener("click", function () {
-                            Main.refineryObjectArray[i].state = 4;
+                            refineryObjectArray[i].state = 4;
                         });
                         div3_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img2 element for Cancel button
                         div3_imgcancel.addEventListener("click", function () {
-                            Main.refineryObjectArray[i].state = 0;
+                            refineryObjectArray[i].state = 0;
                         });        //create event listener for click -> go back to state 0
                         div3.appendChild(div3_span1);    //append span1, span2, img1, img2 to div3
                         div3.appendChild(div3_span2);
@@ -444,7 +460,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div4_imgall.className = "refineryslot_div4_imgall";
                         div4_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img2 element for Cancel button
                         div4_imgcancel.addEventListener("click", function () {
-                            Main.refineryObjectArray[i].state = 0;
+                            refineryObjectArray[i].state = 0;
                         });         //create event listener for click -> go back to state 3
                         div4.appendChild(div4_imgore);    //append img1, input box, button, img2 to div4
                         div4.appendChild(div4_imgall);
@@ -459,16 +475,28 @@ Main.pipeline = function () {         //this function contains the entire game a
             } else {            //if initialized
                 for (j = 0; j < refineryObjectArray.length; j += 1) {       //for every refinery slot....
                     e = refineryObjectArray[j];
+                    div1_input = document.getElementById("refineryslot_div1_input_" + j);
                     //if state 0
                         //show div 0
                         //hide div 1,2,3,4
                     //if state 1
+                        //show div 0
+                        //hide div 1,2,3,4
                     if (e.state === 0) {
                         document.getElementById("refineryslot_div0_" + j).style.display = "block";
                         document.getElementById("refineryslot_div1_" + j).style.display = "none";
                         document.getElementById("refineryslot_div2_" + j).style.display = "none";
                         document.getElementById("refineryslot_div3_" + j).style.display = "none";
                         document.getElementById("refineryslot_div4_" + j).style.display = "none";
+                        //recalibrate everything to default: clear all options and variables, etc. from the other divs
+                        while (div1_input.length < 2) {                    //add all options possible
+                            div1_input_option1_a = document.createElement("option");        //index = 0
+                            div1_input_option1_a.text = "1_a";
+                            div1_input.add(div1_input_option1_a);
+                            div1_input_option1_b = document.createElement("option");        //index = 1
+                            div1_input_option1_b.text = "1_b";
+                            div1_input.add(div1_input_option1_b);
+                        }
                     }
                     if (e.state === 1) {
                         document.getElementById("refineryslot_div0_" + j).style.display = "none";
@@ -476,6 +504,13 @@ Main.pipeline = function () {         //this function contains the entire game a
                         document.getElementById("refineryslot_div2_" + j).style.display = "none";
                         document.getElementById("refineryslot_div3_" + j).style.display = "none";
                         document.getElementById("refineryslot_div4_" + j).style.display = "none";
+                        
+                        if (Main.material_ore_1_b === 0) {      //remove elements from end of list
+                            div1_input.remove(1);
+                        }
+                        if (Main.material_ore_1_a === 0) {
+                            div1_input.remove(0);
+                        }
                     }
                 }
             }
@@ -644,7 +679,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 Main.player_refinery_initialized = 0;       //if player gets a new slot, declare not initialized
             }
             for (i = 0; i < Main.refineryObjectArray.length; i += 1) {  //loop through the refinery object array and update the miners
-                Main.refineryObjectArray[i].logic;        //
+                Main.refineryObjectArray[i].logic;        // jshint ignore:line
             }
         }
         
