@@ -207,7 +207,11 @@ canvas {
 }
 
 .refineryslotClass {
-    background-color: #FF0000;
+    background-color: aqua;
+    position: absolute;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
     width: 200px;
     height: 150px
 }
@@ -217,9 +221,32 @@ canvas {
     height 100%;
 }
 
-.refineryslot_div1_input {
-    
+.refineryslot_cancelbutton {
+    position: absolute;
+    height: 15px;
+    width: 15px;
+    top: 0px;
+    right: 0px;
 }
+
+.refineryslot_div1_imginput_ore {
+    position: static;
+    height: 50px;
+    width: 50px;
+}
+
+.refineryslot_div2_imgore {
+    position: static;
+    height: 50px;
+    width: 50px;
+}
+
+.refineryslot_div2_imgall {
+    position: static;
+    height: 25px;
+    width: 50px;
+}
+
 .refineryslot_div2_input {
     
 }
@@ -227,5 +254,5 @@ canvas {
     
 }
 .refineryslot_div3_span1, .refineryslot_div3_span2 {
-    
+    display: block;
 }
