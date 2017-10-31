@@ -106,6 +106,8 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.tickRender = 0;         //tick-count for draw frames
         Main.tickLoop = 0;           //tick-count for main game loop  
         Main.framerate = 60;         //define the FPS of the game
+        Main.tickRate = 1000 / Main.framerate;  //tick-rate of the game; how long in miliseconds one tick is
+        Main.timerTracker = "start"  //labels for where in game loop we are
         
         /* game state tracking */
         Main.stateMenu = 0;          //what screen is the game on. 0 = mining
@@ -315,15 +317,15 @@ Main.pipeline = function () {         //this function contains the entire game a
             var e, difference;
             e = objectauto_refiner;     //define the object refiner that will be updated with this function
             if (e.initialized) {        //if object is initialized...
+                //state 1: container will define current_ore
+                //state 2: container define current_queue
+                //state 3: smelt ore based on current_ore and current_queue.
+                //state 4: smelt ore based on current_ore and current_queue. container will add to current_queue
                 if (e.state === 0) {         //Empty menu, defaults all values
                     e.current_queue = 0;
                     e.current_ore = undefined;
                     e.smeltingactive = 0;
                 }
-                //state 1: container will define current_ore
-                //state 2: container define current_queue
-                //state 3: smelt ore based on current_ore and current_queue.
-                //state 4: smelt ore based on current_ore and current_queue. container will add to current_queue
                 if (e.state === 3 || e.state === 4) {     //if there is an ore chosen and ores queued up, then turn on the furnace
                     e.smeltingactive = 1;
                     e.current_queue -= e.rate;        //remove an amount from the queue
@@ -365,7 +367,6 @@ Main.pipeline = function () {         //this function contains the entire game a
             if (!element_menurefinerycontainer[0].logicInitialized) {       //if refinery container is not initialized (just a blank div)
                 if (Main.player_refinery_initialized) {     //only begin initialization if the refinery array is initialized
                     for (let i = 0; i < refineryObjectArray.length; i += 1) {      //for every refinery object in array...
-                        console.log("BUBURBSR i = ", i);
                         parentdiv = document.createElement("div");      //create empty div
                         parentdiv.className = "refineryslotClass";      //define class type for div
                         parentdiv.id = "refineryslot_" + i;               //define id for specific div based on which refiner it is
@@ -597,45 +598,48 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.object_menurefinerycontainer_draw = function () {
             var e, i, ctx, img,
                 div1_imgcancel, div1_imginput_ore1a, div1_imginput_ore1b,
-                div2_imgore, div2_imgall, div2_imgcancel;
+                div2_imgore, div2_imgall, div2_imgcancel, menurefinerycontainer;
             e = Main.refineryObjectArray;
+            menurefinerycontainer = document.getElementsByClassName("menurefinerycontainer");
             for (i = 0; i < e.length; i += 1) {
-                if (e[i].state === 1) {
-                    div1_imginput_ore1a = document.getElementById("refineryslot_div1_imginput_ore1a_" + i)
-                    div1_imginput_ore1b = document.getElementById("refineryslot_div1_imginput_ore1b_" + i)
-                    div1_imgcancel = document.getElementById("refineryslot_div1_imgcancel_" + i);
-                    ctx = div1_imgcancel.getContext("2d");
-                    img = getImage(Main.Preloader, "cancel.png");
-                    ctx.drawImage(img, 0, 0);
-                    if (div1_imginput_ore1a.style.display !== "none") {
-                        ctx = div1_imginput_ore1a.getContext("2d");
-                        img = getImage(Main.Preloader, "icon_refinery_ore1a.png");
+                if (menurefinerycontainer[i].logicInitialized) {
+                    if (e[i].state === 1) {
+                        div1_imginput_ore1a = menurefinerycontainer[i].querySelector("#refineryslot_div1_imginput_ore1a_" + i);
+                        div1_imginput_ore1b = menurefinerycontainer[i].querySelector("#refineryslot_div1_imginput_ore1b_" + i);
+                        div1_imgcancel = menurefinerycontainer[i].querySelector("#refineryslot_div1_imgcancel_" + i);
+                        ctx = div1_imgcancel.getContext("2d");
+                        img = getImage(Main.Preloader, "cancel.png");
+                        ctx.drawImage(img, 0, 0);
+                        if (div1_imginput_ore1a.style.display !== "none") {
+                            ctx = div1_imginput_ore1a.getContext("2d");
+                            img = getImage(Main.Preloader, "icon_refinery_ore1a.png");
+                            ctx.drawImage(img, 0, 0);
+                        }
+                        if (div1_imginput_ore1b.style.display !== "none") {
+                            ctx = div1_imginput_ore1b.getContext("2d");
+                            img = getImage(Main.Preloader, "icon_refinery_ore1b.png");
+                            ctx.drawImage(img, 0, 0);
+                        }
+                    }
+                    if (e[i].state === 2) {
+                        div2_imgore = document.getElementById("refineryslot_div2_imgore_" + i);
+                        div2_imgall = document.getElementById("refineryslot_div2_imgall_" + i);
+                        div2_imgcancel = document.getElementById("refineryslot_div2_imgcancel_" + i);
+                        ctx = div2_imgore.getContext("2d");
+                        if (e[i].current_ore === "1a") {
+                            img = getImage(Main.Preloader, "icon_refinery_ore1a.png");
+                        }
+                        if (e[i].current_ore === "1b") {
+                            img = getImage(Main.Preloader, "icon_refinery_ore1b.png");
+                        }
+                        ctx.drawImage(img, 0, 0);
+                        ctx = div2_imgall.getContext("2d");
+                        img = getImage(Main.Preloader, "icon_refinery_all.png");
+                        ctx.drawImage(img, 0, 0);
+                        ctx = div2_imgcancel.getContext("2d");
+                        img = getImage(Main.Preloader, "cancel.png");
                         ctx.drawImage(img, 0, 0);
                     }
-                    if (div1_imginput_ore1b.style.display !== "none") {
-                        ctx = div1_imginput_ore1b.getContext("2d");
-                        img = getImage(Main.Preloader, "icon_refinery_ore1b.png");
-                        ctx.drawImage(img, 0, 0);
-                    }
-                }
-                if (e[i].state === 2) {
-                    div2_imgore = document.getElementById("refineryslot_div2_imgore_" + i);
-                    div2_imgall = document.getElementById("refineryslot_div2_imgall_" + i);
-                    div2_imgcancel = document.getElementById("refineryslot_div2_imgcancel_" + i);
-                    ctx = div2_imgore.getContext("2d");
-                    if (e[i].current_ore === "1a") {
-                        img = getImage(Main.Preloader, "icon_refinery_ore1a.png");
-                    }
-                    if (e[i].current_ore === "1b") {
-                        img = getImage(Main.Preloader, "icon_refinery_ore1b.png");
-                    }
-                    ctx.drawImage(img, 0, 0);
-                    ctx = div2_imgall.getContext("2d");
-                    img = getImage(Main.Preloader, "icon_refinery_all.png");
-                    ctx.drawImage(img, 0, 0);
-                    ctx = div2_imgcancel.getContext("2d");
-                    img = getImage(Main.Preloader, "cancel.png");
-                    ctx.drawImage(img, 0, 0);
                 }
             }
             //if state 0
@@ -722,12 +726,16 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         
         Main.clearMenu = function () {          //function to clear the menu (before switching menu)
-            var i, j, target, parent, children;
+            var i, j, k, target, parent, children, props;
             for (i = 0; i < Main.menuObjectArray.length; i += 1) {      //loop through every object in the object array and delete the elements
                 target = Main.menuObjectArray[i];                           //set the target object
                 parent = document.getElementById(target.parentid);          //get the parent element from target object
                 children = document.getElementsByClassName(target.name);    //find the children (array) by class name
                 for (j = 0; j < children.length; j += 1) {              //loop through all children
+                    props = Object.keys(children[j]);
+                    for (k = 0; k < props.length; k += 1) {
+                        delete children[j][props[i]];
+                    }
                     console.log("deleting ", children[j]);
                     parent.removeChild(children[j]);                        //KILL THEM ALL, JOHNNY
                 }
@@ -773,6 +781,7 @@ Main.pipeline = function () {         //this function contains the entire game a
     ----------------------------------------------------------*/
     Main.Engine = function () {     //this function listens for input and then processes it to change variables
         var i;
+        Main.timerTracker = "engine start";
         // listen for inputs
                                     //tell objects to listen
         // call functions to change variables based on inputs
@@ -804,14 +813,17 @@ Main.pipeline = function () {         //this function contains the entire game a
                 Main.player_refinery_initialized = 0;       //if player gets a new slot, declare not initialized
             }
             for (i = 0; i < Main.refineryObjectArray.length; i += 1) {  //loop through the refinery object array and update the miners
-                Main.objectauto_refiner_logic(Main.refineryObjectArray[i]);
+                if (Main.tickEngine % Math.floor(Main.framerate / Main.refineryObjectArray[i].rate) === 0) {
+                    Main.objectauto_refiner_logic(Main.refineryObjectArray[i]);
                 //TODO: FIX THE LOGIC REFERENCE
                 //Main.refineryObjectArray[i].logic;        // jshint ignore:line
+                }
             }
         }
         
         // reset inputs
-        Main.TickEngine += 1;       //add to tick count
+        Main.tickEngine += 1;       //add to tick count
+        Main.timerTracker = "engine complete";
     };
     
     /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -819,16 +831,18 @@ Main.pipeline = function () {         //this function contains the entire game a
     ----------------------------------------------------------*/
     Main.Render = function () {     //this function renders the game
         // do rendering functions
-        Main.drawBackgrounds();
-        //Draw object canvases
-        if (Main.menuInitialized) {                               //if menu initialized, draw all objects in array
-            var i;
-            for (i = 0; i < Main.menuObjectArray.length; i += 1) {
-                Main.menuObjectArray[i].draw();
+        if (Main.timerTracker === "engine complete") {      //only call the render once the engine has done its job
+            Main.drawBackgrounds();
+            //Draw object canvases
+            if (Main.menuInitialized) {                               //if menu initialized, draw all objects in array
+                var i;
+                for (i = 0; i < Main.menuObjectArray.length; i += 1) {
+                    Main.menuObjectArray[i].draw();
+                }
             }
+            Main.tickRender += 1;        // add to tick count
+            window.requestAnimationFrame(Main.Render);
         }
-        Main.tickRender += 1;        // add to tick count
-        window.requestAnimationFrame(Main.Render);
     };
     
     /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -838,7 +852,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.Engine();              //run engine
         //add time compensation methods if needed
         Main.TickLoop += 1;         //add to tick count
-        setTimeout(Main.Loop, 1000 / Main.framerate);     //declare the loop to repeat, at interval equal to length of one game frame (inverse of framerate)
+        setTimeout(Main.Loop, Main.tickRate);     //declare the loop to repeat, at interval equal to length of one game frame (inverse of framerate)
     };
 };
 

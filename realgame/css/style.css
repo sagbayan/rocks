@@ -222,6 +222,7 @@ canvas {
 }
 
 .refineryslot_cancelbutton {
+    display: inherit;
     position: absolute;
     height: 15px;
     width: 15px;
@@ -230,18 +231,21 @@ canvas {
 }
 
 .refineryslot_div1_imginput_ore {
+    display: inherit;
     position: static;
     height: 50px;
     width: 50px;
 }
 
 .refineryslot_div2_imgore {
+    display: inherit;
     position: static;
     height: 50px;
     width: 50px;
 }
 
 .refineryslot_div2_imgall {
+    display: inherit;
     position: static;
     height: 25px;
     width: 50px;
