@@ -24,6 +24,7 @@
 .StageLeft {                    /*inside div, class=wrapper*/
     background-color: #808080;  /*dark gray*/
     position: absolute;
+    text-align: center;
 	z-index: -10;
     left: 0px;
 	top: 0px;
@@ -46,6 +47,7 @@
 .Information {                   /*inside div, stageLeft or stageRight*/
     background-color: #00ff00;
     z-index: 20;
+    text-align: center;
     margin-left: auto;
     margin-right: auto;
     margin-top: 10px;
@@ -53,10 +55,30 @@
     height: 134px;
     width: 240px;
 }
+#information_canvas {
+    position: absolute;
+    width: inherit;
+    height: inherit;
+}
+#infoPlayer_span_playertier, #infoPlayer_span_playerstrength {
+    display: inline-block;
+    position: relative;
+    padding: 10px;
+    top: -10px;
+    width: 50%;
+}
+.info_buttonupgrade {
+    display: inline;
+    padding-left: 30px;
+    height: 30px;
+    width: 30px;
+    right: 0px;
+}
 
 .Statistics {                   /*inside div, stageLeft or stageRight*/
     background-color: #FF0000;  /*red*/
     z-index: 20;
+    position: relative;
     margin-left: auto;
     margin-right: auto;
     margin-top: 10px;
@@ -64,23 +86,32 @@
     height: 75px;
     width: 260px;
 }
+.StatisticsCanvas {
+    position: relative;
+    height: inherit;
+    width: inherit;
+}
 
 .Statistics_topholder {                   /*inside div, stageLeft or stageRight*/
     background-color: #8B0000;  /*red*/
+    position: absolute;
     text-align: center;
-    margin-left: auto;
-    margin-right: auto;
+    top: 0;
     height: 37px;
+    width: inherit;
 }
 
 .Statistics_bottomholder {
+    position: absolute;
     display: flex;
     justify-content: space-around;
     text-align: center;
     background-color: #8B0000;  /*red*/
     margin-left: auto;
     margin-right: auto;
+    top: 37px;
     height: 37px;
+    width: inherit;
 }
 
 .StatisticsDetail {                   /*inside div, stageLeft or stageRight*/
@@ -124,20 +155,20 @@
 }
 
 /* generic canvas things */
+/*
 canvas {
     height: inherit;
     width: inherit;
     position: absolute;
     border: 1px solid #000000;
-}
+}*/
 
 .StageLeftCanvas {
     height: 768px;
-    width: 1366px;
+    width: calc(1366px + 260px/2);
     z-index: inherit;
     position: absolute;
-    margin-left: calc((100% - 1366px)/2);
-    margin-right: calc((100% - 1366px)/2);
+    left: calc((100% - 1366px)/2);
     border: 1px solid #000000;
 }
 
@@ -151,9 +182,8 @@ canvas {
 
 /*images*/
 .rock {
-    position: absolute;
-    margin-left: calc((100% - 200px)/2);
-    margin-right: calc((100% - 200px)/2);
+    position: relative;
+    margin: auto;
     margin-top: 100px;
     height: 200px;
     width: 200px;
@@ -163,16 +193,25 @@ canvas {
 .button_mines {
     position: fixed;
     display: block;
+    opacity: 0.1;
     top: 10px;
     height: 75px;
     width: 75px;
 }
+.button_mines:hover {
+    opacity: 1;
+}
+
 .button_refinery {
     position: fixed;
     display: block;
+    opacity: 0.1;
     top; 95px;
     height: 75px;
     width: 75px;
+}
+.button_refinery:hover {
+    opacity: 1;
 }
 
 /*text objects*/
@@ -187,10 +226,8 @@ canvas {
 }
 
 .refinery_1 {
-    position: absolute;
-    margin-left: calc((100% - 400px)/2);
-    margin-right: calc((100% - 400px)/2);
-    margin-top: 100px;
+    position: relative;
+    margin: auto;
     height: 300px;
     width: 400px;
     border: 1px solid #000000;
@@ -198,9 +235,9 @@ canvas {
 
 /*refinery slots*/
 .menurefinerycontainer {
-    position: absolute;
-    margin-left: auto;
-    margin-right: auto;
+    position: relative;
+    margin: auto;
+    top: -200px;
     width: 500px;
     height: 400px;
     border: 1px solid #000000;
@@ -209,6 +246,7 @@ canvas {
 .refineryslotClass {
     background-color: aqua;
     position: absolute;
+    text-align: center;
     margin-left: auto;
     margin-right: auto;
     display: block;
@@ -232,7 +270,7 @@ canvas {
 
 .refineryslot_div1_imginput_ore {
     display: inherit;
-    position: static;
+    position: relative;
     height: 50px;
     width: 50px;
 }

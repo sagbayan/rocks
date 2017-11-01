@@ -23,7 +23,8 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     "icon_refinery_ore1a.png",
     "icon_refinery_ore1b.png",
     "icon_refinery_all.png",
-    "icon_refinery_refill.png"
+    "icon_refinery_refill.png",
+    "icon_upgrade.png"
 ];
     
 
@@ -107,7 +108,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.tickLoop = 0;           //tick-count for main game loop  
         Main.framerate = 60;         //define the FPS of the game
         Main.tickRate = 1000 / Main.framerate;  //tick-rate of the game; how long in miliseconds one tick is
-        Main.timerTracker = "start"  //labels for where in game loop we are
+        Main.timerTracker = "start";  //labels for where in game loop we are
         
         /* game state tracking */
         Main.stateMenu = 0;          //what screen is the game on. 0 = mining
@@ -229,13 +230,67 @@ Main.pipeline = function () {         //this function contains the entire game a
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Object functions: Mining menu
         ----------------------------------------------------------*/
+        Main.information_player_logic = function () {
+            var element_information, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton;
+            element_information = document.getElementsByClassName("infoPlayer");
+            if (!element_information[0].logicInitialized) {
+                span_playertier = document.createElement("span");
+                span_playertier.id = "infoPlayer_span_playertier";
+                span_playerstrength = document.createElement("span");
+                span_playerstrength.id = "infoPlayer_span_playerstrength";
+                canvas_tierupgradebutton = document.createElement("canvas");
+                canvas_tierupgradebutton.id = "infoPlayer_tierupgradebutton";
+                canvas_tierupgradebutton.className = "info_buttonupgrade";
+                canvas_tierupgradebutton.width = 30;
+                canvas_tierupgradebutton.height = 30;
+                canvas_strengthupgradebutton = document.createElement("canvas");
+                canvas_strengthupgradebutton.id = "infoPlayer_strengthupgradebutton";
+                canvas_strengthupgradebutton.className = "info_buttonupgrade";
+                canvas_strengthupgradebutton.width = 30;
+                canvas_strengthupgradebutton.height = 30;
+                element_information[0].appendChild(span_playertier);
+                element_information[0].appendChild(canvas_tierupgradebutton);
+                element_information[0].appendChild(document.createElement("br"));
+                element_information[0].appendChild(span_playerstrength);
+                element_information[0].appendChild(canvas_strengthupgradebutton);
+                element_information[0].logicInitialized = 1;
+            } else {
+                span_playertier = document.getElementById("infoPlayer_span_playertier");
+                span_playerstrength = document.getElementById("infoPlayer_span_playerstrength");
+                span_playertier.textContent = "Hardness rating: " + Main.player_mine_tier;
+                span_playerstrength.textContent = "Mining strength: " + Main.player_mine_strength;
+            }
+        };
         
+        Main.information_player_draw = function () {
+            var element_information, ctx, img, canvas_tierupgradebutton, canvas_strengthupgradebutton;
+            element_information = document.getElementsByClassName("infoPlayer");
+            if (element_information[0].logicInitialized) {
+                canvas_strengthupgradebutton = document.getElementById("infoPlayer_strengthupgradebutton");
+                canvas_tierupgradebutton = document.getElementById("infoPlayer_tierupgradebutton");
+                ctx = canvas_strengthupgradebutton.getContext("2d");
+                img = getImage(Main.Preloader, "icon_upgrade.png");
+                ctx.drawImage(img, 0, 0);
+                ctx = canvas_tierupgradebutton.getContext("2d");
+                img = getImage(Main.Preloader, "icon_upgrade.png");
+                ctx.drawImage(img, 0, 0);
+            }
+        };
+        
+        //left-side menu buttons
         Main.object_button_mines_logic = function () {
-            var i, element_button;
+            var element_button;
             element_button = document.getElementsByClassName("button_mines");
-            for (i = 0; i < element_button.length; i += 1) {
+            for (let i = 0; i < element_button.length; i += 1) {
                 if (!element_button[i].logicInitialized) {
+                    //element_button[i].style.opacity = 0.1;
                     if (!element_button[i].hasListener) {
+                        element_button[i].addEventListener("mouseover", function () {
+                            //element_button[i].style.opacity = 1;
+                        });
+                        element_button[i].addEventListener("mouseout", function () {
+                            //element_button[i].style.opacity = 0.1;
+                        });
                         element_button[i].addEventListener("click", function () {
                             Main.changeToMenu(0);
                         });
@@ -247,21 +302,38 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         
         Main.object_button_refinery_logic = function () {
-            var i, element_button;
+            var element_button, slidestate;
             element_button = document.getElementsByClassName("button_refinery");
-            for (i = 0; i < element_button.length; i += 1) {
+            for (let i = 0; i < element_button.length; i += 1) {
                 if (!element_button[i].logicInitialized) {
+                    slidestate = 0;
                     if (!element_button[i].hasListener) {
+                        element_button[i].addEventListener("mouseover", function () {
+                            slidestate = 1;
+                        });
+                        element_button[i].addEventListener("mouseout", function () {
+                            slidestate = 0;
+                        });
                         element_button[i].addEventListener("click", function () {
                             Main.changeToMenu(1);
                         });
                         element_button[i].hasListener = 1;
                         element_button[i].logicInitialized = 1;
                     }
+                } else {
+                    if (!slidestate) {
+                        if (element_button[i].style.left > -50) {
+                            element_button[i].style.left -= 1;
+                        }
+                    } else {
+                        if (element_button[i].style.left < 50) {
+                            element_button[i].style.left += 1;
+                        }
+                    }
                 }
             }
         };
-        
+        //THE ROCK YOU CLICK ON
         Main.object_rock_logic = function () {
             var i, element_rock;
             element_rock = document.getElementsByClassName("rock");
@@ -337,9 +409,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                             Main.material_ore_1_b -= e.rate;     //smelt an ore from the player's stock
                             Main.material_refined_1_b += e.rate;     //add it to the player's refined stock     //rate = ore/sec
                         }
-                    } else if (e.current_queue < 0) {    //if this makes queue negative
+                    } else if (e.current_queue < 0) {    //if this made queue negative
                         difference = e.current_queue + e.rate;        //calculate negative queue PLUS the rate
-                        if (difference > 0) {       //if this results in a positive number, then there is still ore to smelt
+                        if (difference > 0) {       //if this resulted in a positive number, then there is still ore to smelt
                             if (e.current_ore === "1a") {
                                 Main.material_ore_1_a -= difference;    //this should make it 0
                                 Main.material_ore_1_a += difference;
@@ -491,14 +563,22 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div3_span2 = document.createElement("span");    //create span2 for how many are left
                         div3_span2.id = "refineryslot_div3_span2_" + i;
                         div3_span2.className = "refineryslot_div3_span2";
-                        div3_imgrefill = getImage(Main.Preloader, "icon_refinery_refill.png");    //create img1 element for refill button
+                        div3_imgrefill = document.createElement("canvas");    //create img1 element for refill button
+                        div3_imgrefill.id = "refineryslot_div3_imgrefill_" + i;
+                        div3_imgrefill.className = "refineryslot_div3_imgrefill";
+                        div3_imgrefill.width = 50;
+                        div3_imgrefill.height = 25;
                         div3_imgrefill.addEventListener("click", function () {
                             refineryObjectArray[i].state = 4;
                         });
-                        div3_imgcancel = new getImage(Main.Preloader, "cancel.png");    //create img2 element for Cancel button
+                        div3_imgcancel = document.createElement("canvas");    //create img element for Cancel button
+                        div3_imgcancel.className = "refineryslot_cancelbutton";
+                        div3_imgcancel.id = "refineryslot_div3_imgcancel_" + i;
+                        div3_imgcancel.width = 15;
+                        div3_imgcancel.height = 15;
                         div3_imgcancel.addEventListener("click", function () {
-                            refineryObjectArray[i].state = 0;
-                        });        //create event listener for click -> go back to state 0
+                            refineryObjectArray[i].current_queue = 0;
+                        });
                         div3.appendChild(div3_span1);    //append span1, span2, img1, img2 to div3
                         div3.appendChild(div3_span2);
                         div3.appendChild(div3_imgrefill);
@@ -509,17 +589,31 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div4 = document.createElement("div");   //create div4 for state 4 menu
                         div4.className = "refineryslot_div4";
                         div4.id = "refineryslot_div4_" + i;
-                        div4_imgore = getImage(Main.Preloader, "icon_refinery_ore1a.png");    //create img1 element for ore chosen previously
+                        div4_imgore = document.createElement("canvas");    //create img1 element for ore chosen previously
                         div4_imgore.className = "refineryslot_div4_imgore";
+                        div4_imgore.id = "refineryslot_div4_imgore_" + i;
+                        div4_imgore.width = 50;
+                        div4_imgore.height = 50;
                         div4_input = document.createElement("input");    //create input box for adding to queue from previously chosen ore
                         div4_input.setAttribute("type", "number");
                         div4_input.className = "refineryslot_div4_input";
-                        div4_imgall = getImage(Main.Preloader, "icon_refinery_all.png");    //create button to add all available qty from previously chosen ore
+                        div4_imgall = document.createElement("canvas");    //create button to add all available qty from previously chosen ore
                         div4_imgall.className = "refineryslot_div4_imgall";
+                        div4_imgall.id = "refineryslot_div4_imgall_" + i;
+                        div4_imgall.width = 50;
+                        div4_imgall.height = 25;
                         div4_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img2 element for Cancel button
                         div4_imgcancel.addEventListener("click", function () {
                             refineryObjectArray[i].state = 3;
                         });         //create event listener for click -> go back to state 3
+                        div4_imgcancel = document.createElement("canvas");    //create img element for Cancel button
+                        div4_imgcancel.className = "refineryslot_cancelbutton";
+                        div4_imgcancel.id = "refineryslot_div4_imgcancel_" + i;
+                        div4_imgcancel.width = 15;
+                        div4_imgcancel.height = 15;
+                        div4_imgcancel.addEventListener("click", function () {
+                            refineryObjectArray[i].state = 3;
+                        });
                         div4.appendChild(div4_imgore);    //append img1, input box, button, img2 to div4
                         div4.appendChild(div4_imgall);
                         div4.appendChild(div4_input);
@@ -532,8 +626,8 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             } else {            //if initialized
                 for (j = 0; j < refineryObjectArray.length; j += 1) {       //for every refinery slot....
-                    e = refineryObjectArray[j];
-                    div0 = document.getElementById("refineryslot_div0_" + j);
+                    e = refineryObjectArray[j];                 //define refinery object this slot refers to
+                    div0 = document.getElementById("refineryslot_div0_" + j);       //define all elements related to the refinery object this slot refers to
                     
                     div1 = document.getElementById("refineryslot_div1_" + j);
                     div1_imginput_ore1a = document.getElementById("refineryslot_div1_imginput_ore1a_" + j);
@@ -544,19 +638,13 @@ Main.pipeline = function () {         //this function contains the entire game a
                     div3_span1 = document.getElementById("refineryslot_div3_span1_" + j);
                     div3_span2 = document.getElementById("refineryslot_div3_span2_" + j);
                     div4 = document.getElementById("refineryslot_div4_" + j);
-                    //if state 0
-                        //show div 0
-                        //hide div 1,2,3,4
-                    //if state 1
-                        //show div 0
-                        //hide div 1,2,3,4
-                    if (e.state === 0) {
-                        div0.style.display = "block";
+                    
+                    if (e.state === 0) {        //check state for refinery object (which menu should be shown)
+                        div0.style.display = "block";       //show related parent div, hide everything else
                         div1.style.display = "none";
                         div2.style.display = "none";
                         div3.style.display = "none";
                         div4.style.display = "none";
-                        //recalibrate everything to default: clear all options and variables, etc. from the other divs
                     }
                     if (e.state === 1) {
                         div0.style.display = "none";
@@ -564,15 +652,15 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div2.style.display = "none";
                         div3.style.display = "none";
                         div4.style.display = "none";
-                        if (Main.material_ore_1_a <= 0) {
+                        if (Main.material_ore_1_a <= 0) {       //show icon of ores in player's stock, hide them if player doesn't have them
                             div1_imginput_ore1a.style.display = "none";
                         } else {
-                            div1_imginput_ore1a.style.display = "block";
+                            div1_imginput_ore1a.style.display = "inline";
                         }
                         if (Main.material_ore_1_b <= 0) {
                             div1_imginput_ore1b.style.display = "none";
                         } else {
-                            div1_imginput_ore1b.style.display = "block";
+                            div1_imginput_ore1b.style.display = "inline";
                         }
                     }
                     if (e.state === 2) {
@@ -588,8 +676,15 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div2.style.display = "none";
                         div3.style.display = "block";
                         div4.style.display = "none";
-                        div3_span1.innerHTML = "smelting: " + e.current_ore;
+                        div3_span1.innerHTML = "smelting: " + e.current_ore;        //update values to show smelting progress
                         div3_span2.innerHTML = "left: " + e.current_queue;
+                    }
+                    if (e.state === 4) {
+                        div0.style.display = "none";
+                        div1.style.display = "none";
+                        div2.style.display = "none";
+                        div3.style.display = "none";
+                        div4.style.display = "block";
                     }
                 }
             }
@@ -597,17 +692,20 @@ Main.pipeline = function () {         //this function contains the entire game a
         
         Main.object_menurefinerycontainer_draw = function () {
             var e, i, ctx, img,
+                menurefinerycontainer,
                 div1_imgcancel, div1_imginput_ore1a, div1_imginput_ore1b,
-                div2_imgore, div2_imgall, div2_imgcancel, menurefinerycontainer;
-            e = Main.refineryObjectArray;
-            menurefinerycontainer = document.getElementsByClassName("menurefinerycontainer");
+                div2_imgore, div2_imgall, div2_imgcancel,
+                div3_imgrefill, div3_imgcancel,
+                div4_imgore, div4_imgall, div4_imgcancel;
+            e = Main.refineryObjectArray;           //define the refinery object being referred to for values
+            menurefinerycontainer = document.getElementsByClassName("menurefinerycontainer");       //define the container element that this function draws for
             for (i = 0; i < e.length; i += 1) {
-                if (menurefinerycontainer[i].logicInitialized) {
-                    if (e[i].state === 1) {
-                        div1_imginput_ore1a = menurefinerycontainer[i].querySelector("#refineryslot_div1_imginput_ore1a_" + i);
+                if (menurefinerycontainer[i].logicInitialized) {        //if logic function has built all the elements (avoids null pointers)
+                    if (e[i].state === 1) {         //check state (which menu should be drawn)
+                        div1_imginput_ore1a = menurefinerycontainer[i].querySelector("#refineryslot_div1_imginput_ore1a_" + i);         //define canvas elements shown on this menu
                         div1_imginput_ore1b = menurefinerycontainer[i].querySelector("#refineryslot_div1_imginput_ore1b_" + i);
                         div1_imgcancel = menurefinerycontainer[i].querySelector("#refineryslot_div1_imgcancel_" + i);
-                        ctx = div1_imgcancel.getContext("2d");
+                        ctx = div1_imgcancel.getContext("2d");      //for each canvas: define context -> define image -> draw image
                         img = getImage(Main.Preloader, "cancel.png");
                         ctx.drawImage(img, 0, 0);
                         if (div1_imginput_ore1a.style.display !== "none") {
@@ -640,16 +738,44 @@ Main.pipeline = function () {         //this function contains the entire game a
                         img = getImage(Main.Preloader, "cancel.png");
                         ctx.drawImage(img, 0, 0);
                     }
+                    if (e[i].state === 3) {
+                        div3_imgrefill = document.getElementById("refineryslot_div3_imgrefill_" + i);
+                        div3_imgcancel = document.getElementById("refineryslot_div3_imgcancel_" + i);
+                        ctx = div3_imgrefill.getContext("2d");
+                        img = getImage(Main.Preloader, "icon_refinery_refill.png");
+                        ctx.drawImage(img, 0, 0);
+                        ctx = div3_imgcancel.getContext("2d");
+                        img = getImage(Main.Preloader, "cancel.png");
+                        ctx.drawImage(img, 0, 0);
+                    }
+                    if (e[i].state === 4) {
+                        div4_imgore = document.getElementById("refineryslot_div4_imgore_" + i);
+                        div4_imgall = document.getElementById("refineryslot_div4_imgall_" + i);
+                        div4_imgcancel = document.getElementById("refineryslot_div4_imgcancel_" + i);
+                        ctx = div4_imgore.getContext("2d");
+                        if (e[i].current_ore === "1a") {
+                            img = getImage(Main.Preloader, "icon_refinery_ore1a.png");
+                        }
+                        if (e[i].current_ore === "1b") {
+                            img = getImage(Main.Preloader, "icon_refinery_ore1b.png");
+                        }
+                        ctx.drawImage(img, 0, 0);
+                        ctx = div4_imgall.getContext("2d");
+                        img = getImage(Main.Preloader, "icon_refinery_all.png");
+                        ctx.drawImage(img, 0, 0);
+                        ctx = div4_imgcancel.getContext("2d");
+                        img = getImage(Main.Preloader, "cancel.png");
+                        ctx.drawImage(img, 0, 0);
+                    }
                 }
             }
-            //if state 0
-            //if state 1
-                //draw canvases
-            //if state 2
-                //draw canvases
         };
         
         //logic for orecount text objects
+        Main.object_oreCounter_logic = function () {
+            
+        }
+        
         Main.object_oreCount_logic = function () {
             var i, element_oreCount;
             element_oreCount = document.getElementsByClassName("oreCountTotal");
@@ -690,14 +816,17 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuObjectArray = [];                      //clear the menu object array
             console.log("obj array length ", Main.menuObjectArray.length);
             if (statemenu === 0) {                              //if requested to initialize mining menu...
-                Main.menuTotalObjects = 6;                  //number of objects that need to be loaded for this specific menu
+                Main.menuTotalObjects = 7;                  //number of objects that need to be loaded for this specific menu
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "StageLeft_1", "button_mines.png", Main.object_button_mines_logic));
                 Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "StageLeft_1", "button_refinery.png", Main.object_button_refinery_logic));
                 Main.menuObjectInitialize(new Main.Object(1, "oreCountTotal", "statistics_topholder", "no image", Main.object_oreCount_logic));
                 Main.menuObjectInitialize(new Main.Object(1, "oreCount1_a", "statistics_bottomholder", "no image", Main.object_oreCount1_a_logic));
                 Main.menuObjectInitialize(new Main.Object(1, "oreCount1_b", "statistics_bottomholder", "no image", Main.object_oreCount1_b_logic));
+                //Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic));
+                
+                Main.menuObjectInitialize(new Main.Object(2, "infoPlayer", "information", "no image", Main.information_player_logic, Main.information_player_draw));
                 
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
