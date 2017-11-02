@@ -43,7 +43,7 @@
 	width: 260px;
     height: 100%;
 }
-
+/*information*/
 .Information {                   /*inside div, stageLeft or stageRight*/
     background-color: #00ff00;
     z-index: 20;
@@ -70,8 +70,6 @@
 .info_buttonupgrade {
     display: inline;
     padding-left: 30px;
-    height: 30px;
-    width: 30px;
     right: 0px;
 }
 
@@ -86,6 +84,7 @@
     height: 75px;
     width: 260px;
 }
+
 .StatisticsCanvas {
     position: relative;
     height: inherit;
@@ -155,14 +154,6 @@
 }
 
 /* generic canvas things */
-/*
-canvas {
-    height: inherit;
-    width: inherit;
-    position: absolute;
-    border: 1px solid #000000;
-}*/
-
 .StageLeftCanvas {
     height: 768px;
     width: calc(1366px + 260px/2);
@@ -214,23 +205,38 @@ canvas {
     opacity: 1;
 }
 
-/*text objects*/
-.oreCountTotal {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 40;
-}
-
-.oreCount1_a, .oreCount1_b {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 30;
-}
-
 .refinery_1 {
     position: relative;
     margin: auto;
     height: 300px;
     width: 400px;
     border: 1px solid #000000;
+}
+/* ore counter */
+.oreCounter {
+    text-align: center;
+    justify-content: space-between;
+    width: inherit;
+    height: inherit;
+}
+#oreCounter_spanore {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 40;
+}
+#oreCounter_divtier1_span_title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 30;
+}
+#oreCounter_divtier1 {
+    background-color: aquamarine;
+    border: 1px solid #000000;
+}
+.oreCounter_divtier_orenumbers {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20;
+}
+.oreCounter_divtier1_canvasicon {
+    display: inline-block;
 }
 
 /*refinery slots*/

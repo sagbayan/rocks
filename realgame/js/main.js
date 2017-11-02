@@ -24,7 +24,9 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     "icon_refinery_ore1b.png",
     "icon_refinery_all.png",
     "icon_refinery_refill.png",
-    "icon_upgrade.png"
+    "icon_upgrade.png",
+    "icon_oreCounter_1a.png",
+    "icon_oreCounter_1b.png"
 ];
     
 
@@ -134,6 +136,8 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.player_mine_strength = 1;      //strength of mining ability (determines how many "mines" per in-game click)
         Main.player_mine_amount = 1;        //amount of cursors (determines how many in-game clicks per real-life click)
         
+        //oreCounter
+        Main.player_oreCountermenu = 0;                //ore counter extended menu.  0 for close, 1 for opened.
         //refinery
         Main.refineryObjectArray = [];      //array that holds refinery objects.  updated on every tick, on every screen
         Main.player_refinery_tier = 1;      //tier of refinery.  determines what ore can be smelted
@@ -225,15 +229,18 @@ Main.pipeline = function () {         //this function contains the entire game a
                 //if it is
                     //recalculate values controlled by listeners
         }
+        
+        coding scheme for Main.
         */
         
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Object functions: Mining menu
         ----------------------------------------------------------*/
         Main.information_player_logic = function () {
-            var element_information, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton;
+            var element_information, docfrag, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton;
             element_information = document.getElementsByClassName("infoPlayer");
             if (!element_information[0].logicInitialized) {
+                docfrag = document.createDocumentFragment();
                 span_playertier = document.createElement("span");
                 span_playertier.id = "infoPlayer_span_playertier";
                 span_playerstrength = document.createElement("span");
@@ -241,18 +248,19 @@ Main.pipeline = function () {         //this function contains the entire game a
                 canvas_tierupgradebutton = document.createElement("canvas");
                 canvas_tierupgradebutton.id = "infoPlayer_tierupgradebutton";
                 canvas_tierupgradebutton.className = "info_buttonupgrade";
-                canvas_tierupgradebutton.width = 30;
-                canvas_tierupgradebutton.height = 30;
+                canvas_tierupgradebutton.width = getImage(Main.Preloader, "icon_upgrade.png").width;
+                canvas_tierupgradebutton.height = getImage(Main.Preloader, "icon_upgrade.png").height;
                 canvas_strengthupgradebutton = document.createElement("canvas");
                 canvas_strengthupgradebutton.id = "infoPlayer_strengthupgradebutton";
                 canvas_strengthupgradebutton.className = "info_buttonupgrade";
-                canvas_strengthupgradebutton.width = 30;
-                canvas_strengthupgradebutton.height = 30;
-                element_information[0].appendChild(span_playertier);
-                element_information[0].appendChild(canvas_tierupgradebutton);
-                element_information[0].appendChild(document.createElement("br"));
-                element_information[0].appendChild(span_playerstrength);
-                element_information[0].appendChild(canvas_strengthupgradebutton);
+                canvas_strengthupgradebutton.width = getImage(Main.Preloader, "icon_upgrade.png").width;
+                canvas_strengthupgradebutton.height = getImage(Main.Preloader, "icon_upgrade.png").height;
+                docfrag.appendChild(span_playertier);
+                docfrag.appendChild(canvas_tierupgradebutton);
+                docfrag.appendChild(document.createElement("br"));
+                docfrag.appendChild(span_playerstrength);
+                docfrag.appendChild(canvas_strengthupgradebutton);
+                element_information[0].appendChild(docfrag);
                 element_information[0].logicInitialized = 1;
             } else {
                 span_playertier = document.getElementById("infoPlayer_span_playertier");
@@ -428,7 +436,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         
         Main.object_menurefinerycontainer_logic = function () {
-            var refineryObjectArray, element_menurefinerycontainer, j, e, parentdiv,
+            var refineryObjectArray, element_menurefinerycontainer, j, e, parentdiv, docfrag,
                 div0, div0_span,
                 div1, div1_imginput_ore1a, div1_imginput_ore1b, div1_imgcancel,
                 div2, div2_imgore, div2_input, div2_imgall, div2_imgcancel,
@@ -442,6 +450,8 @@ Main.pipeline = function () {         //this function contains the entire game a
                         parentdiv = document.createElement("div");      //create empty div
                         parentdiv.className = "refineryslotClass";      //define class type for div
                         parentdiv.id = "refineryslot_" + i;               //define id for specific div based on which refiner it is
+                        docfrag = document.createDocumentFragment();
+                        docfrag.appendChild(parentdiv);
                         //populate subdivs with content
                         //state = 0
                         div0 = document.createElement("div");        //create div0 for state 0 menu
@@ -620,7 +630,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div4.appendChild(div4_imgcancel);
                         parentdiv.appendChild(div4);    //append div4 to parentdiv
                         
-                        element_menurefinerycontainer[0].appendChild(parentdiv);    //append parentdiv to the container
+                        element_menurefinerycontainer[0].appendChild(docfrag);    //append docfrag (which holds parentdiv) to the container
                     }
                     element_menurefinerycontainer[0].logicInitialized = 1;  //divs and elements have been created and assigned to an object by ID, it is initialized
                 }
@@ -773,31 +783,106 @@ Main.pipeline = function () {         //this function contains the entire game a
         
         //logic for orecount text objects
         Main.object_oreCounter_logic = function () {
-            
-        }
+            var element_oreCounter, docfrag,
+                span_ore, span_showdetail,
+                divtier1, divtier1_tableraw, row, column, divtier1_p_title,
+                divtier1_canvasicon_ore1a, divtier1_span_ore1a, divtier1_canvasicon_ore1b, divtier1_span_ore1b;
+            element_oreCounter = document.getElementsByClassName("oreCounter");
+            if (!element_oreCounter[0].logicInitialized) {
+                docfrag = document.createDocumentFragment();
+                span_ore = document.createElement("span");
+                span_ore.id = "oreCounter_spanore";
+                span_showdetail = document.createElement("span");
+                span_showdetail.id = "oreCounter_span_showdetail";
+                span_showdetail.textContent = "+";
+                span_showdetail.addEventListener("click", function () {
+                    if (Main.player_oreCountermenu === 0) {
+                        Main.player_oreCountermenu = 1;
+                    } else {
+                        Main.player_oreCountermenu = 0;
+                    }
+                });
+                //canvas_showdetail add event listener to toggle the divtier1 panel display
+                docfrag.appendChild(span_ore);
+                docfrag.appendChild(span_showdetail);
+                divtier1 = document.createElement("div");
+                divtier1.id = "oreCounter_divtier1";
+                divtier1.style.display = "none";
+                divtier1_p_title = document.createElement("span");
+                divtier1_p_title.id = "oreCounter_divtier1_span_title";
+                divtier1_p_title.className = "oreCounter_divtier_title";
+                divtier1_p_title.textContent = "TIER I";
+                divtier1_tableraw = document.createElement("table");
+                row = document.createElement("tr");         //create row (1st row)
+                column = document.createElement("td");      //create column
+                divtier1_canvasicon_ore1a = document.createElement("canvas");
+                divtier1_canvasicon_ore1a.id = "oreCounter_divtier1_canvasicon_ore1a";
+                divtier1_canvasicon_ore1a.className = "oreCounter_divtier1_canvasicon";
+                divtier1_canvasicon_ore1a.width = getImage(Main.Preloader, "icon_oreCounter_1a.png").width;
+                divtier1_canvasicon_ore1a.height = getImage(Main.Preloader, "icon_oreCounter_1a.png").height;
+                column.appendChild(divtier1_canvasicon_ore1a);  //append icon to column
+                row.appendChild(column);        //append column to row
+                column = document.createElement("td");      //create new column
+                divtier1_span_ore1a = document.createElement("span");
+                divtier1_span_ore1a.id = "oreCounter_divtier1_span_ore1a";
+                divtier1_span_ore1a.className = "oreCounter_divtier_orenumbers";
+                column.appendChild(divtier1_span_ore1a);    //append text to new column
+                row.appendChild(column);        //append column to row
+                divtier1_tableraw.appendChild(row);        //append the row to the table
+                row = document.createElement("tr");         //create row (2nd row)
+                column = document.createElement("td");      //create column
+                divtier1_canvasicon_ore1b = document.createElement("canvas");
+                divtier1_canvasicon_ore1b.id = "oreCounter_divtier1_canvasicon_ore1b";
+                divtier1_canvasicon_ore1b.width = getImage(Main.Preloader, "icon_oreCounter_1b.png").width;
+                divtier1_canvasicon_ore1b.height = getImage(Main.Preloader, "icon_oreCounter_1b.png").height;
+                column.appendChild(divtier1_canvasicon_ore1b);  //append icon to column
+                row.appendChild(column);        //append column to row
+                column = document.createElement("td");      //create new column
+                divtier1_span_ore1b = document.createElement("span");
+                divtier1_span_ore1b.id = "oreCounter_divtier1_span_ore1b";
+                divtier1_span_ore1b.className = "oreCounter_divtier_orenumbers";
+                column.appendChild(divtier1_span_ore1b);    //append text to new column
+                row.appendChild(column);        //append column to row
+                divtier1_tableraw.appendChild(row);        //append the 2nd row to the table
+                
+                divtier1.appendChild(divtier1_p_title); //append the title to div
+                divtier1.appendChild(divtier1_tableraw);   //append table under the title
+                docfrag.appendChild(divtier1);          //append the div wrapper to docfrag
+                element_oreCounter[0].appendChild(docfrag);     //append the docfrag
+                element_oreCounter[0].logicInitialized = 1;     //elements fully created!
+            } else {
+                span_ore = document.getElementById("oreCounter_spanore");
+                span_showdetail = document.getElementById("oreCounter_span_showdetail");
+                divtier1 = document.getElementById("oreCounter_divtier1");
+                divtier1_span_ore1a = document.getElementById("oreCounter_divtier1_span_ore1a");
+                divtier1_span_ore1b = document.getElementById("oreCounter_divtier1_span_ore1b");
+                span_ore.textContent = Main.material_ore_1_a + Main.material_ore_1_b + " ores";
+                if (divtier1.style.display != "none") {
+                    divtier1_span_ore1a.textContent = Main.material_ore_1_a;
+                    divtier1_span_ore1b.textContent = Main.material_ore_1_b;
+                }
+            }
+        };
         
-        Main.object_oreCount_logic = function () {
-            var i, element_oreCount;
-            element_oreCount = document.getElementsByClassName("oreCountTotal");
-            //console.log(element_oreCount.length);
-            for (i = 0; i < element_oreCount.length; i += 1) {
-                element_oreCount[i].textvalue = Main.material_ore_1_a + Main.material_ore_1_b + " ores";
-            }
-        };
-        Main.object_oreCount1_a_logic = function () {
-            var i, element_oreCount1_a;
-            element_oreCount1_a = document.getElementsByClassName("oreCount1_a");
-            //console.log(element_oreCount.length);
-            for (i = 0; i < element_oreCount1_a.length; i += 1) {
-                element_oreCount1_a[i].textvalue = Main.material_ore_1_a;
-            }
-        };
-        Main.object_oreCount1_b_logic = function () {
-            var i, element_oreCount1_b;
-            element_oreCount1_b = document.getElementsByClassName("oreCount1_b");
-            //console.log(element_oreCount.length);
-            for (i = 0; i < element_oreCount1_b.length; i += 1) {
-                element_oreCount1_b[i].textvalue = Main.material_ore_1_b;
+        Main.object_oreCounter_draw = function () {
+            var element_oreCounter, ctx, img,
+                divtier1, divtier1_canvasicon_ore1a, divtier1_canvasicon_ore1b;
+            element_oreCounter = document.getElementsByClassName("oreCounter");
+            if (element_oreCounter[0].logicInitialized) {
+                divtier1 = document.getElementById("oreCounter_divtier1");
+                if (Main.player_oreCountermenu === 1) {
+                    divtier1.style.display = "block";
+                    divtier1_canvasicon_ore1a = document.getElementById("oreCounter_divtier1_canvasicon_ore1a");
+                    divtier1_canvasicon_ore1b = document.getElementById("oreCounter_divtier1_canvasicon_ore1b");
+                    ctx = divtier1_canvasicon_ore1a.getContext("2d");
+                    img = getImage(Main.Preloader, "icon_oreCounter_1a.png");
+                    ctx.drawImage(img, 0, 0);
+                    ctx = divtier1_canvasicon_ore1b.getContext("2d");
+                    img = getImage(Main.Preloader, "icon_oreCounter_1b.png");
+                    ctx.drawImage(img, 0, 0);
+                } else {
+                    divtier1.style.display = "none";
+                }
             }
         };
         
@@ -816,16 +901,12 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuObjectArray = [];                      //clear the menu object array
             console.log("obj array length ", Main.menuObjectArray.length);
             if (statemenu === 0) {                              //if requested to initialize mining menu...
-                Main.menuTotalObjects = 7;                  //number of objects that need to be loaded for this specific menu
+                Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "StageLeft_1", "button_mines.png", Main.object_button_mines_logic));
                 Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "StageLeft_1", "button_refinery.png", Main.object_button_refinery_logic));
-                Main.menuObjectInitialize(new Main.Object(1, "oreCountTotal", "statistics_topholder", "no image", Main.object_oreCount_logic));
-                Main.menuObjectInitialize(new Main.Object(1, "oreCount1_a", "statistics_bottomholder", "no image", Main.object_oreCount1_a_logic));
-                Main.menuObjectInitialize(new Main.Object(1, "oreCount1_b", "statistics_bottomholder", "no image", Main.object_oreCount1_b_logic));
-                //Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic));
+                Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic));
-                
                 Main.menuObjectInitialize(new Main.Object(2, "infoPlayer", "information", "no image", Main.information_player_logic, Main.information_player_draw));
                 
                 while (!Main.menuInitialized) {
@@ -835,12 +916,10 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             }
             if (statemenu === 1) {                              //if requested to initialize mining menu...
-                Main.menuTotalObjects = 7;                  //number of objects that need to be loaded for this specific menu
+                Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "StageLeft_1", "button_mines.png", Main.object_button_mines_logic));
                 Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "StageLeft_1", "button_refinery.png", Main.object_button_refinery_logic));
-                Main.menuObjectInitialize(new Main.Object(1, "oreCountTotal", "statistics_topholder", "no image", Main.object_oreCount_logic));
-                Main.menuObjectInitialize(new Main.Object(1, "oreCount1_a", "statistics_bottomholder", "no image", Main.object_oreCount1_a_logic));
-                Main.menuObjectInitialize(new Main.Object(1, "oreCount1_b", "statistics_bottomholder", "no image", Main.object_oreCount1_b_logic));
+                Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "refinery_1", "StageLeft_1", "refinery_1.png", Main.object_rock_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "menurefinerycontainer", "StageLeft_1", "no_image", Main.object_menurefinerycontainer_logic, Main.object_menurefinerycontainer_draw));
