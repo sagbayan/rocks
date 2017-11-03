@@ -91,28 +91,6 @@
     width: inherit;
 }
 
-.Statistics_topholder {                   /*inside div, stageLeft or stageRight*/
-    background-color: #8B0000;  /*red*/
-    position: absolute;
-    text-align: center;
-    top: 0;
-    height: 37px;
-    width: inherit;
-}
-
-.Statistics_bottomholder {
-    position: absolute;
-    display: flex;
-    justify-content: space-around;
-    text-align: center;
-    background-color: #8B0000;  /*red*/
-    margin-left: auto;
-    margin-right: auto;
-    top: 37px;
-    height: 37px;
-    width: inherit;
-}
-
 .StatisticsDetail {                   /*inside div, stageLeft or stageRight*/
     background-color: #FF0000;  /*red*/
     z-index: 20;
@@ -120,7 +98,7 @@
     margin-right: auto;
     margin-top: 10px;
     margin-bottom: 10px;
-    height: 134px;
+    height: 300px;
     width: 240px
 }
 /*
@@ -231,7 +209,7 @@
     background-color: aquamarine;
     border: 1px solid #000000;
 }
-.oreCounter_divtier_orenumbers {
+.oreCounter_divtier_orenumbers, .oreCounter_divtier_refnumbers {
     font-family: 'Rajdhani', sans-serif;
     font-size: 20;
 }
@@ -243,9 +221,9 @@
 .menurefinerycontainer {
     position: relative;
     margin: auto;
-    top: -200px;
-    width: 500px;
-    height: 400px;
+    top: 10px;
+    width: 80%;
+    height: 300px;
     border: 1px solid #000000;
 }
 

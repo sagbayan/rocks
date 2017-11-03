@@ -26,7 +26,9 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     "icon_refinery_refill.png",
     "icon_upgrade.png",
     "icon_oreCounter_1a.png",
-    "icon_oreCounter_1b.png"
+    "icon_oreCounter_1aref.png",
+    "icon_oreCounter_1b.png",
+    "icon_oreCounter_1bref.png"
 ];
     
 
@@ -46,6 +48,9 @@ var Preloader = function () {                       //object that holds and load
         progress = this.imageSrcArray.length;   //images are done loading when this is 0
         for (i = 0; i < this.imageSrcArray.length; i += 1) {
             assetImage = new Image();
+            assetImage.src = this.domain + this.imageSrcArray[i];       //define src and alt text for images
+            assetImage.alt = this.imageSrcArray[i];
+            this.imageArray.push(assetImage);
             assetImage.onload = function () {
                 progress -= 1;
                 if (progress <= 0) {
@@ -53,9 +58,9 @@ var Preloader = function () {                       //object that holds and load
                     this.loadingdone = 1;           //declare loading is done
                 }
             };
-            assetImage.src = this.domain + this.imageSrcArray[i];       //define src and alt text for images
-            assetImage.alt = this.imageSrcArray[i];
-            this.imageArray.push(assetImage);                           //push the image into the actual imageArray to be referenced to
+            //assetImage.src = this.domain + this.imageSrcArray[i];       //define src and alt text for images
+            //assetImage.alt = this.imageSrcArray[i];
+            //this.imageArray.push(assetImage);                           //push the image into the actual imageArray to be referenced to
         }
     };
 };
@@ -118,6 +123,9 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.menuObjectArray = [];   //array that holds all the objects in a menu
         Main.stateMenuChanging = 0;  //tells if the menu is currently being changed.
         
+        Main.documentFragment = document.createDocumentFragment();      //used for updating the elements onscreen
+        Main.documentFragment.appendChild(document.getElementsByClassName("Wrapper")[0]);      //set up the documentfragment
+        
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Mining and shit
         ----------------------------------------------------------*/
@@ -160,11 +168,12 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
             
             while (this.initialized !== 1) {
-                var e1, e2;
+                var parentElement, e1, e2;
+                parentElement = Main.documentFragment.querySelectorAll("#"+this.parentid)[0];
                 if (this.objecttype === 0) {    //if image       
                     e1 = document.createElement("canvas");
                     e1.className = this.name;
-                    document.getElementById(this.parentid).appendChild(e1);       //appendChild canvas to the parent you gave
+                    parentElement.appendChild(e1);       //appendChild canvas to the parent you gave
                     this.canvas = e1;
                     this.image = getImage(Main.Preloader, this.imagename);                              //define the image
                     this.initialized = 1;
@@ -174,14 +183,14 @@ Main.pipeline = function () {         //this function contains the entire game a
                     e1.className = this.name;
                     e2 = document.createTextNode("<blank>");
                     e1.appendChild(e2);
-                    document.getElementById(this.parentid).appendChild(e1);
+                    parentElement.appendChild(e1);
                     this.textElement = e1;
                     this.textvalue = e1.textContent;
                     this.initialized = 1;
                 } else if (this.objecttype === 2) {     //if container element (contains special object)
                     e1 = document.createElement("div");
                     e1.className = this.name;
-                    document.getElementById(this.parentid).appendChild(e1);
+                    parentElement.appendChild(e1);
                     this.initialized = 1;
                 }
             }
@@ -516,17 +525,21 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div2_input.className = "refineryslot_div2_input";
                         div2_input.id = "refineryslot_div2_input_" + i;
                         div2_input.type = "number";
-                        div2_input.addEventListener("submit", function () {
-                            if (refineryObjectArray[i].current_ore === "1a") {
-                                if (div2_input.value <= Main.material_ore_1_a) {
-                                    refineryObjectArray[i].current_queue = div2_input.value;
-                                    refineryObjectArray[i].state = 3;
+                        div2_input.addEventListener("keypress", function (event) {
+                            if (event.which === 13) {
+                                if (refineryObjectArray[i].current_ore === "1a") {
+                                    if (div2_input.value <= Main.material_ore_1_a && div2_input.value > 0) {
+                                        refineryObjectArray[i].current_queue = div2_input.value;
+                                        div2_input.value = null;
+                                        refineryObjectArray[i].state = 3;
+                                    }
                                 }
-                            }
-                            if (refineryObjectArray[i].current_ore === "1b") {
-                                if (div2_input.value <= Main.material_ore_1_b) {
-                                    refineryObjectArray[i].current_queue = div2_input.value;
-                                    refineryObjectArray[i].state = 3;
+                                if (refineryObjectArray[i].current_ore === "1b") {
+                                    if (div2_input.value <= Main.material_ore_1_b && div2_input.value > 0) {
+                                        refineryObjectArray[i].current_queue = div2_input.value;
+                                        div2_input.value = null;
+                                        refineryObjectArray[i].state = 3;
+                                    }
                                 }
                             }
                         });
@@ -537,16 +550,12 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div2_imgall.height = 25;
                         div2_imgall.addEventListener("click", function () {
                             if (refineryObjectArray[i].current_ore === "1a") {
-                                if (div2_input.value <= Main.material_ore_1_a) {
-                                    refineryObjectArray[i].current_queue = Main.material_ore_1_a;
-                                    refineryObjectArray[i].state = 3;
-                                }
+                                refineryObjectArray[i].current_queue = Main.material_ore_1_a;
+                                refineryObjectArray[i].state = 3;
                             }
                             if (refineryObjectArray[i].current_ore === "1b") {
-                                if (div2_input.value <= Main.material_ore_1_b) {
-                                    refineryObjectArray[i].current_queue = Main.material_ore_1_b;
-                                    refineryObjectArray[i].state = 3;
-                                }
+                                refineryObjectArray[i].current_queue = Main.material_ore_1_b;
+                                refineryObjectArray[i].state = 3;
                             }
                         });
                         div2_imgcancel = document.createElement("canvas");    //create img element for Cancel button
@@ -557,9 +566,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div2_imgcancel.addEventListener("click", function () {
                             refineryObjectArray[i].state = 0;
                         });        //create event listener for click -> go back to state 0
+                        div2.appendChild(div2_imgore);
                         div2.appendChild(div2_imgcancel);    //append img, input box, button, and cancel to div2
                         div2.appendChild(div2_input);
-                        div2.appendChild(div2_imgore);
                         div2.appendChild(div2_imgall);
                         parentdiv.appendChild(div2);    //append div2 to parentdiv
                         
@@ -607,11 +616,43 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div4_input = document.createElement("input");    //create input box for adding to queue from previously chosen ore
                         div4_input.setAttribute("type", "number");
                         div4_input.className = "refineryslot_div4_input";
+                        div4_input.addEventListener("keypress", function (event) {
+                            if (event.which === 13) {
+                                if (refineryObjectArray[i].current_ore === "1a") {
+                                    if (div4_input.value <= Main.material_ore_1_a && div4_input.value > 0) {
+                                        refineryObjectArray[i].current_queue = div4_input.value;
+                                        div4_input.value = null;
+                                        refineryObjectArray[i].state = 3;
+                                    }
+                                }
+                                if (refineryObjectArray[i].current_ore === "1b") {
+                                    if (div4_input.value <= Main.material_ore_1_b && div4_input.value > 0) {
+                                        refineryObjectArray[i].current_queue = div2_input.value;
+                                        div4_input.value = null;
+                                        refineryObjectArray[i].state = 3;
+                                    }
+                                }
+                            }
+                        });
                         div4_imgall = document.createElement("canvas");    //create button to add all available qty from previously chosen ore
                         div4_imgall.className = "refineryslot_div4_imgall";
                         div4_imgall.id = "refineryslot_div4_imgall_" + i;
                         div4_imgall.width = 50;
                         div4_imgall.height = 25;
+                        div4_imgall.addEventListener("click", function () {
+                            if (refineryObjectArray[i].current_ore === "1a") {
+                                if (refineryObjectArray[i].current_queue < Main.material_ore_1_a) {
+                                    refineryObjectArray[i].current_queue = Main.material_ore_1_a;
+                                    refineryObjectArray[i].state = 3;
+                                }
+                            }
+                            if (refineryObjectArray[i].current_ore === "1b") {
+                                if (refineryObjectArray[i].current_queue < Main.material_ore_1_b) {
+                                    refineryObjectArray[i].current_queue = Main.material_ore_1_b;
+                                    refineryObjectArray[i].state = 3;
+                                }
+                            }
+                        });
                         div4_imgcancel = getImage(Main.Preloader, "cancel.png");    //create img2 element for Cancel button
                         div4_imgcancel.addEventListener("click", function () {
                             refineryObjectArray[i].state = 3;
@@ -784,9 +825,10 @@ Main.pipeline = function () {         //this function contains the entire game a
         //logic for orecount text objects
         Main.object_oreCounter_logic = function () {
             var element_oreCounter, docfrag,
-                span_ore, span_showdetail,
-                divtier1, divtier1_tableraw, row, column, divtier1_p_title,
-                divtier1_canvasicon_ore1a, divtier1_span_ore1a, divtier1_canvasicon_ore1b, divtier1_span_ore1b;
+                span_ore, span_showdetail, row, column,
+                divtier1, divtier1_tableraw, divtier1_tableref, divtier1_p_title,
+                divtier1_canvasicon_ore1a, divtier1_span_ore1a, divtier1_canvasicon_ore1b, divtier1_span_ore1b,
+                divtier1_canvasicon_ref1a, divtier1_span_ref1a, divtier1_canvasicon_ref1b, divtier1_span_ref1b;
             element_oreCounter = document.getElementsByClassName("oreCounter");
             if (!element_oreCounter[0].logicInitialized) {
                 docfrag = document.createDocumentFragment();
@@ -812,7 +854,11 @@ Main.pipeline = function () {         //this function contains the entire game a
                 divtier1_p_title.id = "oreCounter_divtier1_span_title";
                 divtier1_p_title.className = "oreCounter_divtier_title";
                 divtier1_p_title.textContent = "TIER I";
+                divtier1.appendChild(divtier1_p_title); //append the title to div
+                divtier1.appendChild(document.createElement("br"));
+                
                 divtier1_tableraw = document.createElement("table");
+                divtier1_tableraw.style.display = "inline-block";
                 row = document.createElement("tr");         //create row (1st row)
                 column = document.createElement("td");      //create column
                 divtier1_canvasicon_ore1a = document.createElement("canvas");
@@ -844,9 +890,43 @@ Main.pipeline = function () {         //this function contains the entire game a
                 column.appendChild(divtier1_span_ore1b);    //append text to new column
                 row.appendChild(column);        //append column to row
                 divtier1_tableraw.appendChild(row);        //append the 2nd row to the table
-                
-                divtier1.appendChild(divtier1_p_title); //append the title to div
                 divtier1.appendChild(divtier1_tableraw);   //append table under the title
+                
+                divtier1_tableref = document.createElement("table");
+                divtier1_tableref.style.display = "inline-block";
+                row = document.createElement("tr");
+                column = document.createElement("td");
+                divtier1_canvasicon_ref1a = document.createElement("canvas");
+                divtier1_canvasicon_ref1a.id = "oreCounter_divtier1_canvasicon_ref1a";
+                divtier1_canvasicon_ref1a.className = "oreCounter_divtier1_canvasicon";
+                divtier1_canvasicon_ref1a.width = getImage(Main.Preloader, "icon_oreCounter_1aref.png").width;
+                divtier1_canvasicon_ref1a.height = getImage(Main.Preloader, "icon_oreCounter_1aref.png").height;
+                column.appendChild(divtier1_canvasicon_ref1a);  //append icon to column
+                row.appendChild(column);        //append column to row
+                column = document.createElement("td");      //create new column
+                divtier1_span_ref1a = document.createElement("span");
+                divtier1_span_ref1a.id = "oreCounter_divtier1_span_ref1a";
+                divtier1_span_ref1a.className = "oreCounter_divtier_refnumbers";
+                column.appendChild(divtier1_span_ref1a);    //append text to new column
+                row.appendChild(column);        //append column to row
+                divtier1_tableref.appendChild(row);        //append the row to the table
+                row = document.createElement("tr");         //create row (2nd row)
+                column = document.createElement("td");      //create column
+                divtier1_canvasicon_ref1b = document.createElement("canvas");
+                divtier1_canvasicon_ref1b.id = "oreCounter_divtier1_canvasicon_ref1b";
+                divtier1_canvasicon_ref1b.width = getImage(Main.Preloader, "icon_oreCounter_1bref.png").width;
+                divtier1_canvasicon_ref1b.height = getImage(Main.Preloader, "icon_oreCounter_1bref.png").height;
+                column.appendChild(divtier1_canvasicon_ref1b);  //append icon to column
+                row.appendChild(column);        //append column to row
+                column = document.createElement("td");      //create new column
+                divtier1_span_ref1b = document.createElement("span");
+                divtier1_span_ref1b.id = "oreCounter_divtier1_span_ref1b";
+                divtier1_span_ref1b.className = "oreCounter_divtier_refnumbers";
+                column.appendChild(divtier1_span_ref1b);    //append text to new column
+                row.appendChild(column);        //append column to row
+                divtier1_tableref.appendChild(row);        //append the 2nd row to the table
+                divtier1.appendChild(divtier1_tableref);
+                
                 docfrag.appendChild(divtier1);          //append the div wrapper to docfrag
                 element_oreCounter[0].appendChild(docfrag);     //append the docfrag
                 element_oreCounter[0].logicInitialized = 1;     //elements fully created!
@@ -856,17 +936,23 @@ Main.pipeline = function () {         //this function contains the entire game a
                 divtier1 = document.getElementById("oreCounter_divtier1");
                 divtier1_span_ore1a = document.getElementById("oreCounter_divtier1_span_ore1a");
                 divtier1_span_ore1b = document.getElementById("oreCounter_divtier1_span_ore1b");
+                divtier1_span_ref1a = document.getElementById("oreCounter_divtier1_span_ref1a");
+                divtier1_span_ref1b = document.getElementById("oreCounter_divtier1_span_ref1b");
                 span_ore.textContent = Main.material_ore_1_a + Main.material_ore_1_b + " ores";
                 if (divtier1.style.display != "none") {
                     divtier1_span_ore1a.textContent = Main.material_ore_1_a;
                     divtier1_span_ore1b.textContent = Main.material_ore_1_b;
+                    divtier1_span_ref1a.textContent = Main.material_refined_1_a;
+                    divtier1_span_ref1b.textContent = Main.material_refined_1_b;
                 }
             }
         };
         
         Main.object_oreCounter_draw = function () {
             var element_oreCounter, ctx, img,
-                divtier1, divtier1_canvasicon_ore1a, divtier1_canvasicon_ore1b;
+                divtier1,
+                divtier1_canvasicon_ore1a, divtier1_canvasicon_ore1b,
+                divtier1_canvasicon_ref1a, divtier1_canvasicon_ref1b;
             element_oreCounter = document.getElementsByClassName("oreCounter");
             if (element_oreCounter[0].logicInitialized) {
                 divtier1 = document.getElementById("oreCounter_divtier1");
@@ -874,11 +960,19 @@ Main.pipeline = function () {         //this function contains the entire game a
                     divtier1.style.display = "block";
                     divtier1_canvasicon_ore1a = document.getElementById("oreCounter_divtier1_canvasicon_ore1a");
                     divtier1_canvasicon_ore1b = document.getElementById("oreCounter_divtier1_canvasicon_ore1b");
+                    divtier1_canvasicon_ref1a = document.getElementById("oreCounter_divtier1_canvasicon_ref1a");
+                    divtier1_canvasicon_ref1b = document.getElementById("oreCounter_divtier1_canvasicon_ref1b");
                     ctx = divtier1_canvasicon_ore1a.getContext("2d");
                     img = getImage(Main.Preloader, "icon_oreCounter_1a.png");
                     ctx.drawImage(img, 0, 0);
                     ctx = divtier1_canvasicon_ore1b.getContext("2d");
                     img = getImage(Main.Preloader, "icon_oreCounter_1b.png");
+                    ctx.drawImage(img, 0, 0);
+                    ctx = divtier1_canvasicon_ref1a.getContext("2d");
+                    img = getImage(Main.Preloader, "icon_oreCounter_1aref.png");
+                    ctx.drawImage(img, 0, 0);
+                    ctx = divtier1_canvasicon_ref1b.getContext("2d");
+                    img = getImage(Main.Preloader, "icon_oreCounter_1bref.png");
                     ctx.drawImage(img, 0, 0);
                 } else {
                     divtier1.style.display = "none";
@@ -893,13 +987,13 @@ Main.pipeline = function () {         //this function contains the entire game a
             if (object.initialized) {
                 console.log("adding ", object.name);
                 Main.menuObjectArray.push(object);
+                console.log("obj array length ", Main.menuObjectArray.length);
             }
         };
         
         Main.buildMenu = function (statemenu) {             //function to initialize objects for a menu.  Only call if menuinitialized = 0
             Main.menuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
             Main.menuObjectArray = [];                      //clear the menu object array
-            console.log("obj array length ", Main.menuObjectArray.length);
             if (statemenu === 0) {                              //if requested to initialize mining menu...
                 Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "StageLeft_1", "button_mines.png", Main.object_button_mines_logic));
@@ -911,6 +1005,8 @@ Main.pipeline = function () {         //this function contains the entire game a
                 
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
+                        console.log("we done here");
+                        document.body.appendChild(Main.documentFragment);
                         Main.menuInitialized = 1;               //declare menu is initialized    
                     }
                 }
@@ -926,22 +1022,27 @@ Main.pipeline = function () {         //this function contains the entire game a
                 
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
+                        console.log("we done here");
+                        document.body.appendChild(Main.documentFragment);
                         Main.menuInitialized = 1;               //declare menu is initialized    
                     }
                 }
             }
-            console.log("obj array length ", Main.menuObjectArray.length);
         };
         
         Main.clearMenu = function () {          //function to clear the menu (before switching menu)
             var i, j, k, target, parent, children, props;
+            console.log("docfrag = ", Main.documentFragment);
+            Main.documentFragment.appendChild(document.getElementsByClassName("Wrapper")[0]);      //set up the documentfragment
             for (i = 0; i < Main.menuObjectArray.length; i += 1) {      //loop through every object in the object array and delete the elements
                 target = Main.menuObjectArray[i];                           //set the target object
-                parent = document.getElementById(target.parentid);          //get the parent element from target object
-                children = document.getElementsByClassName(target.name);    //find the children (array) by class name
+                parent = Main.documentFragment.querySelectorAll("#" + target.parentid)[0];          //get the parent element from target object
+                console.log("parent = ", parent);
+                children = parent.querySelectorAll("." + target.name);    //find the children (array) by class name
                 for (j = 0; j < children.length; j += 1) {              //loop through all children
                     props = Object.keys(children[j]);
                     for (k = 0; k < props.length; k += 1) {
+                        console.log("deleting prop ", children[j][props[i]]);
                         delete children[j][props[i]];
                     }
                     console.log("deleting ", children[j]);
@@ -963,16 +1064,16 @@ Main.pipeline = function () {         //this function contains the entire game a
         //draw backgrounds
         Main.drawBackgrounds = function () {
             var canvas_stageleft, ctx_stageleft, image_stageleft;
-            canvas_stageleft = document.getElementsByClassName("StageLeftCanvas");
+            canvas_stageleft = document.getElementsByClassName("StageLeftCanvas")[0];
             if (Main.stateMenu === 0) {
                 image_stageleft = getImage(Main.Preloader, "background_mines.png");
             }
             if (Main.stateMenu === 1) {
                 image_stageleft = getImage(Main.Preloader, "background_mines.png");
             }
-            ctx_stageleft = canvas_stageleft[0].getContext("2d");
+            ctx_stageleft = canvas_stageleft.getContext("2d");
             ctx_stageleft.imageSmoothingEnabled = 0;
-            ctx_stageleft.clearRect(0, 0, canvas_stageleft[0].width, canvas_stageleft[0].height);
+            ctx_stageleft.clearRect(0, 0, canvas_stageleft.width, canvas_stageleft.height);
             ctx_stageleft.drawImage(image_stageleft, 0, 0, image_stageleft.width, image_stageleft.height);
         };
         
@@ -1040,16 +1141,18 @@ Main.pipeline = function () {         //this function contains the entire game a
     Main.Render = function () {     //this function renders the game
         // do rendering functions
         if (Main.timerTracker === "engine complete") {      //only call the render once the engine has done its job
-            Main.drawBackgrounds();
-            //Draw object canvases
-            if (Main.menuInitialized) {                               //if menu initialized, draw all objects in array
-                var i;
-                for (i = 0; i < Main.menuObjectArray.length; i += 1) {
-                    Main.menuObjectArray[i].draw();
+            if (!Main.stateMenuChanging) {
+                //Draw object canvases
+                if (Main.menuInitialized) {                               //if menu initialized, draw all objects in array
+                    var i;
+                    Main.drawBackgrounds();
+                    for (i = 0; i < Main.menuObjectArray.length; i += 1) {
+                        Main.menuObjectArray[i].draw();
+                    }
                 }
+                Main.tickRender += 1;        // add to tick count
+                window.requestAnimationFrame(Main.Render);
             }
-            Main.tickRender += 1;        // add to tick count
-            window.requestAnimationFrame(Main.Render);
         }
     };
     
