@@ -246,10 +246,16 @@ Main.pipeline = function () {         //this function contains the entire game a
         Object functions: Mining menu
         ----------------------------------------------------------*/
         Main.information_player_logic = function () {
-            var element_information, docfrag, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton;
+            var element_information, docfrag, table, row, column,
+                div_infowrapperplayer, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton,
+                div_infowrapperauto,
+                scrollPosition, scrollflipY, infostate;
             element_information = document.getElementsByClassName("infoPlayer");
+            scrollflipY = 400;      //position in pixelY that the menu flips to auto-mining menu instead of player
             if (!element_information[0].logicInitialized) {
                 docfrag = document.createDocumentFragment();
+                div_infowrapperplayer = document.createElement("div");
+                div_infowrapperplayer.id = "infoPlayer_div_infowrapperplayer";
                 span_playertier = document.createElement("span");
                 span_playertier.id = "infoPlayer_span_playertier";
                 span_playerstrength = document.createElement("span");
@@ -264,18 +270,54 @@ Main.pipeline = function () {         //this function contains the entire game a
                 canvas_strengthupgradebutton.className = "info_buttonupgrade";
                 canvas_strengthupgradebutton.width = getImage(Main.Preloader, "icon_upgrade.png").width;
                 canvas_strengthupgradebutton.height = getImage(Main.Preloader, "icon_upgrade.png").height;
-                docfrag.appendChild(span_playertier);
-                docfrag.appendChild(canvas_tierupgradebutton);
-                docfrag.appendChild(document.createElement("br"));
-                docfrag.appendChild(span_playerstrength);
-                docfrag.appendChild(canvas_strengthupgradebutton);
+                
+                table = document.createElement("table");
+                row = document.createElement("tr");
+                column = document.createElement("td");
+                column.appendChild(canvas_tierupgradebutton);
+                row.appendChild(column);
+                column = document.createElement("td");
+                column.appendChild(span_playertier);
+                row.appendChild(column);
+                table.appendChild(row);
+                row = document.createElement("tr");
+                column = document.createElement("td");
+                column.appendChild(canvas_strengthupgradebutton);
+                row.appendChild(column);
+                column = document.createElement("td");
+                column.appendChild(span_playerstrength);
+                row.appendChild(column);
+                table.appendChild(row);
+                div_infowrapperplayer.appendChild(table);
+                docfrag.appendChild(div_infowrapperplayer);
+                
+                div_infowrapperauto = document.createElement("div");
+                div_infowrapperauto.id = "infoAuto_div_infowrapperauto";
+                docfrag.appendChild(div_infowrapperauto);
+                
                 element_information[0].appendChild(docfrag);
                 element_information[0].logicInitialized = 1;
             } else {
-                span_playertier = document.getElementById("infoPlayer_span_playertier");
-                span_playerstrength = document.getElementById("infoPlayer_span_playerstrength");
-                span_playertier.textContent = "Hardness rating: " + Main.player_mine_tier;
-                span_playerstrength.textContent = "Mining strength: " + Main.player_mine_strength;
+                scrollPosition = document.getElementById("StageLeft_1").scrollTop;
+                div_infowrapperplayer = document.getElementById("infoPlayer_div_infowrapperplayer");
+                div_infowrapperauto = document.getElementById("infoAuto_div_infowrapperauto");
+                if (scrollPosition <= scrollflipY) {    //check which menu should be showing
+                    infostate = 0;       //0 if player menu, 1 if automining menu
+                } else {
+                    infostate = 1;
+                }
+                if (infostate === 0) {  //make the div visible then do the necessary logic
+                    div_infowrapperauto.style.display = "none";
+                    div_infowrapperplayer.style.display = "block";
+                    span_playertier = document.getElementById("infoPlayer_span_playertier");
+                    span_playerstrength = document.getElementById("infoPlayer_span_playerstrength");
+                    span_playertier.textContent = "Hardness rating: " + Main.player_mine_tier;
+                    span_playerstrength.textContent = "Mining strength: " + Main.player_mine_strength;   
+                }
+                if (infostate === 1) {
+                    div_infowrapperplayer.style.display = "none";
+                    div_infowrapperauto.style.display = "block";
+                }
             }
         };
         
@@ -996,8 +1038,8 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
                 Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
-                Main.menuObjectInitialize(new Main.Object(0, "button_mines", "StageLeft_1", "button_mines.png", Main.object_button_mines_logic));
-                Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "StageLeft_1", "button_refinery.png", Main.object_button_refinery_logic));
+                Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
+                Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic));
@@ -1013,8 +1055,8 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
             if (statemenu === 1) {                              //if requested to initialize mining menu...
                 Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
-                Main.menuObjectInitialize(new Main.Object(0, "button_mines", "StageLeft_1", "button_mines.png", Main.object_button_mines_logic));
-                Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "StageLeft_1", "button_refinery.png", Main.object_button_refinery_logic));
+                Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
+                Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "refinery_1", "StageLeft_1", "refinery_1.png", Main.object_rock_logic));
@@ -1151,9 +1193,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                     }
                 }
                 Main.tickRender += 1;        // add to tick count
-                window.requestAnimationFrame(Main.Render);
             }
         }
+        window.requestAnimationFrame(Main.Render);
     };
     
     /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
