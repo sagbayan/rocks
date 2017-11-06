@@ -28,7 +28,8 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     "icon_oreCounter_1a.png",
     "icon_oreCounter_1aref.png",
     "icon_oreCounter_1b.png",
-    "icon_oreCounter_1bref.png"
+    "icon_oreCounter_1bref.png",
+    "icon_autominerselect_tier0.png"
 ];
     
 
@@ -253,6 +254,7 @@ Main.pipeline = function () {         //this function contains the entire game a
             var element_information, docfrag, table, row, column,
                 div_infowrapperplayer, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton,
                 div_infowrapperauto, span_auto_type, span_auto_count, span_auto_ratetotal, canvas_autocountupgrade, canvas_autorateupgrade,
+                div_infowrapperautoblank, span_autoblank, div_infowrapper_select, canvas_autoblankselect_tier0,
                 scrollPosition, scrollflipY, infostate, autominertypeselected;
             element_information = document.getElementsByClassName("infoPlayer");
             scrollflipY = 400;      //position in pixelY that the menu flips to auto-mining menu instead of player
@@ -344,12 +346,32 @@ Main.pipeline = function () {         //this function contains the entire game a
                 div_infowrapperauto.appendChild(table);
                 docfrag.appendChild(div_infowrapperauto);
                 
+                div_infowrapperautoblank = document.createElement("div");
+                div_infowrapperautoblank.id = "infoPlayer_div_infowrapperautoblank";
+                span_autoblank = document.createElement("span");
+                span_autoblank.id = "infoPlayer_span_autoblank";
+                span_autoblank.textContent = "Please select a miner.";
+                div_infowrapper_select = document.createElement("div");
+                div_infowrapper_select.id = "infoPlayer_div_infowrapper_select";
+                canvas_autoblankselect_tier0 = document.createElement("canvas");
+                canvas_autoblankselect_tier0.id = "infoPlayer_canvas_autoblankselect_tier0";
+                canvas_autoblankselect_tier0.width = getImage(Main.Preloader, "icon_autominerselect_tier0.png").width;
+                canvas_autoblankselect_tier0.height = getImage(Main.Preloader, "icon_autominerselect_tier0.png").height;
+                canvas_autoblankselect_tier0.addEventListener("click", function () {
+                    Main.autominerArray_typeselected = 1;
+                });
+                div_infowrapper_select.appendChild(canvas_autoblankselect_tier0);
+                div_infowrapperautoblank.appendChild(span_autoblank);
+                div_infowrapperautoblank.appendChild(div_infowrapper_select);
+                docfrag.appendChild(div_infowrapperautoblank);
+                
                 element_information[0].appendChild(docfrag);
                 element_information[0].logicInitialized = 1;
             } else {
                 scrollPosition = document.getElementById("StageLeft_1").scrollTop;
                 div_infowrapperplayer = document.getElementById("infoPlayer_div_infowrapperplayer");
                 div_infowrapperauto = document.getElementById("infoAuto_div_infowrapperauto");
+                div_infowrapperautoblank = document.getElementById("infoPlayer_div_infowrapperautoblank");
                 if (scrollPosition <= scrollflipY) {    //check which menu should be showing
                     infostate = 0;       //0 if player menu, 1 if automining menu
                 } else {
@@ -357,6 +379,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
                 if (infostate === 0) {  //make the div visible then do the necessary logic
                     div_infowrapperauto.style.display = "none";
+                    div_infowrapperautoblank.style.display = "none";
                     div_infowrapperplayer.style.display = "block";
                     span_playertier = document.getElementById("infoPlayer_span_playertier");
                     span_playerstrength = document.getElementById("infoPlayer_span_playerstrength");
@@ -365,36 +388,50 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
                 if (infostate === 1) {
                     div_infowrapperplayer.style.display = "none";
-                    div_infowrapperauto.style.display = "block";
-                    span_auto_type = document.getElementById("infoAuto_span_auto_type");
-                    span_auto_count = document.getElementById("infoAuto_span_auto_count");
-                    span_auto_ratetotal = document.getElementById("infoAuto_span_auto_ratetotal");
-                    //find the object in the objectautominer array
-                    for (var i = 0; i < Main.autominerArray.length; i += 1) {
-                        if (Main.autominerArray[i].type === Main.autominerArray_typeselected) {
-                            autominertypeselected = Main.autominerArray[i];     //set the object that info will be shown for
+                    if (Main.autominerArray_typeselected === 0) {       //if no miner selected
+                        div_infowrapperautoblank.style.display = "block";
+                        div_infowrapperauto.style.display = "none";
+                    } else {
+                        div_infowrapperautoblank.style.display = "none";
+                        div_infowrapperauto.style.display = "block";
+                        span_auto_type = document.getElementById("infoAuto_span_auto_type");
+                        span_auto_count = document.getElementById("infoAuto_span_auto_count");
+                        span_auto_ratetotal = document.getElementById("infoAuto_span_auto_ratetotal");
+                        //find the object in the objectautominer array
+                        for (var i = 0; i < Main.autominerArray.length; i += 1) {
+                            if (Main.autominerArray[i].type === Main.autominerArray_typeselected) {
+                                autominertypeselected = Main.autominerArray[i];     //set the object that info will be shown for
+                            }
                         }
+                        //update span info based on object vars
+                        span_auto_type.textContent = "Miner type: " + autominertypeselected.type;
+                        span_auto_count.textContent = "Miner count: " + autominertypeselected.count;
+                        span_auto_ratetotal.textContent = "Miner rate (total): " + (autominertypeselected.rate * autominertypeselected.count);
                     }
-                    //update span info based on object vars
-                    span_auto_type.textContent = "Miner type: " + autominertypeselected.type;
-                    span_auto_count.textContent = "Miner count: " + autominertypeselected.count;
-                    span_auto_ratetotal.textContent = "Miner rate (total): " + (autominertypeselected.rate * autominertypeselected.count);
                 }
             }
         };
         
         Main.information_player_draw = function () {
-            var i, element_information, ctx, img, elements_upgradebutton;
+            var i, element_information, ctx, img, elements_upgradebutton, div_infowrapperplayer, div_infowrapperauto, div_infowrapperautoblank;
             element_information = document.getElementsByClassName("infoPlayer");
             if (element_information[0].logicInitialized) {
                 //draw all the upgrade buttons
                 elements_upgradebutton = document.getElementsByClassName("info_buttonupgrade");
+                div_infowrapperplayer = document.getElementById("infoPlayer_div_infowrapperplayer");
+                div_infowrapperauto = document.getElementById("infoAuto_div_infowrapperauto");
+                div_infowrapperautoblank = document.getElementById("infoPlayer_div_infowrapperautoblank");
                 if (elements_upgradebutton.length > 0) {
                     for (i = 0; i < elements_upgradebutton.length; i += 1) {
                         ctx = elements_upgradebutton[i].getContext("2d");
                         img = getImage(Main.Preloader, "icon_upgrade.png");
                         ctx.drawImage(img, 0, 0);
                     }
+                }
+                if (div_infowrapperautoblank !== null) {
+                    ctx = document.getElementById("infoPlayer_canvas_autoblankselect_tier0").getContext("2d");
+                    img = getImage(Main.Preloader, "icon_autominerselect_tier0.png");
+                    ctx.drawImage(img, 0, 0);
                 }
             }
         };
@@ -478,7 +515,7 @@ Main.pipeline = function () {         //this function contains the entire game a
             this.count = 1;      //how many of this miner.  Starts initially at 1
             this.currentTick = 0;       //tick timer
             //calculate initial vars
-            if (this.type === 0) {
+            if (this.type === 1) {
                 this.strength = 1;      //how many ore produced per click
                 this.tier = 1;          //tier of mining.
                 this.rate = 1;          //how many times it clicks per sec (a sec in ticks is the framerate!)
@@ -1122,7 +1159,7 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
-                Main.autominerArray.push(new Main.objectauto_miner(0));
+                Main.autominerArray.push(new Main.objectauto_miner(1));
                 Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
                 Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
