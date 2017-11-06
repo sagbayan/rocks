@@ -153,6 +153,10 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.player_refinery_slotcount = 1; //number of smelting slots player can have
         Main.player_refinery_initialized = 0;   //determines if the refineryObjectArray is ready. starts at 0.
         
+        //autominer
+        Main.autominerArray = [];           //autominer array containing array objects
+        Main.autominerArray_typeselected = 0;       //which autominer currently has focus.  determines what info is shown in menu
+        
         //define objects to be used in the game
         Main.Object = function (objecttype, str_name, str_parentid, str_imagename, function_logic, function_draw) {
             this.objecttype = objecttype;               //determines type of object.  0 for image, 1 for text
@@ -248,8 +252,8 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.information_player_logic = function () {
             var element_information, docfrag, table, row, column,
                 div_infowrapperplayer, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton,
-                div_infowrapperauto,
-                scrollPosition, scrollflipY, infostate;
+                div_infowrapperauto, span_auto_type, span_auto_count, span_auto_ratetotal, canvas_autocountupgrade, canvas_autorateupgrade,
+                scrollPosition, scrollflipY, infostate, autominertypeselected;
             element_information = document.getElementsByClassName("infoPlayer");
             scrollflipY = 400;      //position in pixelY that the menu flips to auto-mining menu instead of player
             if (!element_information[0].logicInitialized) {
@@ -258,8 +262,10 @@ Main.pipeline = function () {         //this function contains the entire game a
                 div_infowrapperplayer.id = "infoPlayer_div_infowrapperplayer";
                 span_playertier = document.createElement("span");
                 span_playertier.id = "infoPlayer_span_playertier";
+                span_playertier.className = "info_spandata";
                 span_playerstrength = document.createElement("span");
                 span_playerstrength.id = "infoPlayer_span_playerstrength";
+                span_playerstrength.className = "info_spandata";
                 canvas_tierupgradebutton = document.createElement("canvas");
                 canvas_tierupgradebutton.id = "infoPlayer_tierupgradebutton";
                 canvas_tierupgradebutton.className = "info_buttonupgrade";
@@ -291,8 +297,51 @@ Main.pipeline = function () {         //this function contains the entire game a
                 div_infowrapperplayer.appendChild(table);
                 docfrag.appendChild(div_infowrapperplayer);
                 
+                //div for autominer info
                 div_infowrapperauto = document.createElement("div");
                 div_infowrapperauto.id = "infoAuto_div_infowrapperauto";
+                span_auto_type = document.createElement("span");
+                span_auto_type.id = "infoAuto_span_auto_type";
+                span_auto_count = document.createElement("span");
+                span_auto_count.id = "infoAuto_span_auto_count";
+                span_auto_count.className = "info_spandata";
+                span_auto_ratetotal = document.createElement("span");
+                span_auto_ratetotal.id = "infoAuto_span_auto_ratetotal";
+                span_auto_ratetotal.className = "info_spandata";
+                canvas_autocountupgrade = document.createElement("canvas");
+                canvas_autocountupgrade.id = "infoAuto_canvas_autocountupgrade";
+                canvas_autocountupgrade.className = "info_buttonupgrade";
+                canvas_autocountupgrade.width = getImage(Main.Preloader, "icon_upgrade.png").width;
+                canvas_autocountupgrade.height = getImage(Main.Preloader, "icon_upgrade.png").height;
+                canvas_autorateupgrade = document.createElement("canvas");
+                canvas_autorateupgrade.id = "infoAuto_canvas_autorateupgrade";
+                canvas_autorateupgrade.className = "info_buttonupgrade";
+                canvas_autorateupgrade.width = getImage(Main.Preloader, "icon_upgrade.png").width;
+                canvas_autorateupgrade.height = getImage(Main.Preloader, "icon_upgrade.png").height;
+                
+                table = document.createElement("table");
+                row = document.createElement("tr");
+                column = document.createElement("td");
+                column.appendChild(span_auto_type);
+                row.appendChild(column);
+                table.appendChild(row);
+                row = document.createElement("tr");
+                column = document.createElement("td");
+                column.appendChild(canvas_autocountupgrade);
+                row.appendChild(column);
+                column = document.createElement("td");
+                column.appendChild(span_auto_count);
+                row.appendChild(column);
+                table.appendChild(row);
+                row = document.createElement("tr");
+                column = document.createElement("td");
+                column.appendChild(canvas_autorateupgrade);
+                row.appendChild(column);
+                column = document.createElement("td");
+                column.appendChild(span_auto_ratetotal);
+                row.appendChild(column);
+                table.appendChild(row);
+                div_infowrapperauto.appendChild(table);
                 docfrag.appendChild(div_infowrapperauto);
                 
                 element_information[0].appendChild(docfrag);
@@ -317,22 +366,36 @@ Main.pipeline = function () {         //this function contains the entire game a
                 if (infostate === 1) {
                     div_infowrapperplayer.style.display = "none";
                     div_infowrapperauto.style.display = "block";
+                    span_auto_type = document.getElementById("infoAuto_span_auto_type");
+                    span_auto_count = document.getElementById("infoAuto_span_auto_count");
+                    span_auto_ratetotal = document.getElementById("infoAuto_span_auto_ratetotal");
+                    //find the object in the objectautominer array
+                    for (var i = 0; i < Main.autominerArray.length; i += 1) {
+                        if (Main.autominerArray[i].type === Main.autominerArray_typeselected) {
+                            autominertypeselected = Main.autominerArray[i];     //set the object that info will be shown for
+                        }
+                    }
+                    //update span info based on object vars
+                    span_auto_type.textContent = "Miner type: " + autominertypeselected.type;
+                    span_auto_count.textContent = "Miner count: " + autominertypeselected.count;
+                    span_auto_ratetotal.textContent = "Miner rate (total): " + (autominertypeselected.rate * autominertypeselected.count);
                 }
             }
         };
         
         Main.information_player_draw = function () {
-            var element_information, ctx, img, canvas_tierupgradebutton, canvas_strengthupgradebutton;
+            var i, element_information, ctx, img, elements_upgradebutton;
             element_information = document.getElementsByClassName("infoPlayer");
             if (element_information[0].logicInitialized) {
-                canvas_strengthupgradebutton = document.getElementById("infoPlayer_strengthupgradebutton");
-                canvas_tierupgradebutton = document.getElementById("infoPlayer_tierupgradebutton");
-                ctx = canvas_strengthupgradebutton.getContext("2d");
-                img = getImage(Main.Preloader, "icon_upgrade.png");
-                ctx.drawImage(img, 0, 0);
-                ctx = canvas_tierupgradebutton.getContext("2d");
-                img = getImage(Main.Preloader, "icon_upgrade.png");
-                ctx.drawImage(img, 0, 0);
+                //draw all the upgrade buttons
+                elements_upgradebutton = document.getElementsByClassName("info_buttonupgrade");
+                if (elements_upgradebutton.length > 0) {
+                    for (i = 0; i < elements_upgradebutton.length; i += 1) {
+                        ctx = elements_upgradebutton[i].getContext("2d");
+                        img = getImage(Main.Preloader, "icon_upgrade.png");
+                        ctx.drawImage(img, 0, 0);
+                    }
+                }
             }
         };
         
@@ -408,6 +471,28 @@ Main.pipeline = function () {         //this function contains the entire game a
                     }
                 }
             }
+        };
+        //autominer objects
+        Main.objectauto_miner = function (type) {
+            this.type = type;       //type of miner.  Determines initial stats, look, etc.
+            this.count = 1;      //how many of this miner.  Starts initially at 1
+            this.currentTick = 0;       //tick timer
+            //calculate initial vars
+            if (this.type === 0) {
+                this.strength = 1;      //how many ore produced per click
+                this.tier = 1;          //tier of mining.
+                this.rate = 1;          //how many times it clicks per sec (a sec in ticks is the framerate!)
+            }
+            this.logic = function () {      //engine logic call.
+                this.timeoutlength = Main.framerate / this.rate;              //calculate the timeout for this function in ticks
+            };
+            this.mine = function () {       //mining function.  is called after logic
+                this.currentTick += 1;                              //add to tick
+                if (this.currentTick >= this.timeoutlength) {        //check if enough ticks have been achieved for it to mine
+                    Main.mineOre(this.tier, this.strength, this.count);     //mine ore based on its stats
+                    this.currentTick = 0;                           //reset the ticks
+                }
+            };
         };
         
         //refinery, refinery slots
@@ -1037,6 +1122,7 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
+                Main.autominerArray.push(new Main.objectauto_miner(0));
                 Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
                 Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
@@ -1170,6 +1256,11 @@ Main.pipeline = function () {         //this function contains the entire game a
                 //Main.refineryObjectArray[i].logic;        // jshint ignore:line
                 }
             }
+        }
+        
+        for (i = 0; i < Main.autominerArray.length; i += 1) {       //loop through the autominerArray
+            Main.autominerArray[i].logic();     //do the miners logic function
+            Main.autominerArray[i].mine();      //tell it to mine
         }
         
         // reset inputs
