@@ -29,7 +29,8 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     "icon_oreCounter_1aref.png",
     "icon_oreCounter_1b.png",
     "icon_oreCounter_1bref.png",
-    "icon_autominerselect_tier0.png"
+    "icon_autominerselect_tier0.png",
+    "icon_upgrade_unlockminer1.png"
 ];
     
 
@@ -158,6 +159,9 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.autominerArray = [];           //autominer array containing array objects
         Main.autominerArray_typeselected = 0;       //which autominer currently has focus.  determines what info is shown in menu
         
+        //upgrade tracker
+        Main.upgradesArray = [];            //contains upgrades
+        
         //define objects to be used in the game
         Main.Object = function (objecttype, str_name, str_parentid, str_imagename, function_logic, function_draw) {
             this.objecttype = objecttype;               //determines type of object.  0 for image, 1 for text
@@ -216,6 +220,38 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
         };
         
+        //calibrate upgrades array!!!@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        Main.object_upgrade = function (name_of_upgrade) {          //upgrades to be kept in the upgrade array
+            this.initialized = 0;       //is this upgrade initialized?  0: just made.  1: ready to build canvas elements.
+            this.purchased = 0;         //does the player have this upgrade yet?
+            this.upgradename = name_of_upgrade;     //string that tells what upgrade this is
+            this.available = 0;         //should upgrade be made available to player?
+            //this.availablecheck   //function to check available status.
+            //this.iconimage      //icon image to use in research menu
+            //this.costcheck      //function to check cost status. 0 if player does not have money, 1 if player does
+            
+            //check what upgrade it is, then initialize vars based on the name
+            if (this.upgradename === "unlock_autominer1") {     //unlock first autominer
+                this.iconimage = getImage(Main.Preloader, "icon_upgrade_unlockminer1.png");         //set image for icon in research menu
+                this.availablecheck = function () {
+                    if (Main.material_refined_1_a >= 10) {
+                        this.available = 1;
+                    }
+                };
+                this.costcheck = function () {
+                    if (Main.material_refined_1_a >= 10 &&
+                       Main.material_refined_1_b >= 10) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                };
+                this.initialized = 1;
+            }
+        };
+        
+        Main.upgradesArray.push(new Main.object_upgrade("unlock_autominer1"));
+        
         //functions to process input///////////////////////////////////
         Main.mineOre = function (tier, strength, amount) {                       //the method for clicking ONCE
             var e1, chance_1_b, chance_1_a;
@@ -247,9 +283,91 @@ Main.pipeline = function () {         //this function contains the entire game a
         coding scheme for Main.
         */
         
+        
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Object functions: Mining menu
         ----------------------------------------------------------*/
+        Main.portraitMenu_logic = function () {
+            
+        };
+        
+        Main.researchmenu_logic = function () {
+            var element_researchmenu, docfrag, i,
+                div_researchmenu_wrapper, span_researchmenu_title, div_researchmenu_select,
+                upgrades_countavailable, upgrades_countadded, upgrades_howmany,
+                canvas_tobedeleted,
+                canvas_upgradeicon;
+            upgrades_howmany = 0;       //initialize vars
+            element_researchmenu = document.getElementsByClassName("researchMenu");
+            if (!element_researchmenu[0].logicInitialized) {
+                upgrades_countadded = 0;        //how many icons are currently built
+                docfrag = document.createDocumentFragment();
+                div_researchmenu_wrapper = document.createElement("div");
+                div_researchmenu_wrapper.id = "researchMenu_div_researchmenu_wrapper";
+                span_researchmenu_title = document.createElement("span");
+                span_researchmenu_title.textContent = "Upgrades below:";
+                div_researchmenu_select = document.createElement("div");
+                div_researchmenu_select.id = "researchMenu_div_researchmenu_select";
+                div_researchmenu_wrapper.appendChild(span_researchmenu_title);
+                div_researchmenu_wrapper.appendChild(div_researchmenu_select);
+                docfrag.appendChild(div_researchmenu_wrapper);
+                element_researchmenu[0].appendChild(docfrag);
+                element_researchmenu[0].logicInitialized = 1;
+            } else {
+                //check upgrade array to see which upgrades should be avaiable
+                div_researchmenu_select = document.getElementById("researchMenu_div_researchmenu_select");
+                upgrades_countadded = document.getElementsByClassName("researchMenu_canvas_upgradeicon").length;
+                upgrades_countavailable = 0;
+                //calculate how many objects in upgradesArray are supposed to be available
+                for (i = 0; i < Main.upgradesArray.length; i += 1) {     //loop through all upgradesArray objects
+                    if (Main.upgradesArray[i].purchased === 0 && Main.upgradesArray[i].available === 1) {        //if the upgrade has not been purchased yet and it should be available to player
+                        upgrades_countavailable += 1;
+                    }
+                }
+                console.log("wwwo ", upgrades_countadded, upgrades_countavailable);
+                if (upgrades_countadded < upgrades_countavailable) {     //if upgrades shown is less than how many are available, add them!
+                    docfrag = document.createDocumentFragment();
+                    for (i = 0; i < Main.upgradesArray.length; i += 1) {    //loop through all upgradesArray objects
+                        if (Main.upgradesArray[i].initialized === 1 && Main.upgradesArray[i].purchased === 0 && Main.upgradesArray[i].available === 1) {      //if initialized state is 1, and upgrade was not purchased, canvas element needs to be built for this upgrade
+                            canvas_upgradeicon = document.createElement("canvas");      //build canvas
+                            canvas_upgradeicon.width = Main.upgradesArray[i].iconimage.width;
+                            canvas_upgradeicon.height = Main.upgradesArray[i].iconimage.height;
+                            canvas_upgradeicon.className = "researchMenu_canvas_upgradeicon";
+                            canvas_upgradeicon.id = "researchMenu_canvas_upgradeicon_" + Main.upgradesArray[i].upgradename;      //give canvas an identifier by upgrade name
+                            //TODO: add event listener
+                            docfrag.appendChild(canvas_upgradeicon);    //append it into the icon select list shown to player
+                        }
+                    }
+                    div_researchmenu_select.appendChild(docfrag);       //add any new upgrades to the current list
+                }
+                if (upgrades_countadded > upgrades_countavailable) {     //if upgrades shown is more, delete the canvases for purchased upgrades
+                    console.log("wooow");
+                    for (i = 0; i < Main.upgradesArray.length; i += 1) {     //loop through all upgradesArray objects
+                        if (Main.upgradesArray[i].purchased === 1) {        //if the upgrade has been purchased, we need to find its canvas and remove it
+                            canvas_tobedeleted = document.getElementById("researchMenu_canvas_icon_" + Main.upgradesArray[i].upgradename);      //find the canvas
+                            canvas_tobedeleted.parentNode.removeChild(canvas_tobedeleted);      //delete it
+                            upgrades_countadded -= 1;       //upgrade the count added number to break the if statement
+                        }
+                    }
+                }
+                //for every array[i].available, do the following:
+                    //create canvas
+            }
+        };
+        Main.researchmenu_draw = function () {
+            var elements_canvas_upgradeicons, i,
+                upgradeicon_image, upgradeicon_ctx;
+            //draw canvases for upgradeicons
+            elements_canvas_upgradeicons = document.getElementsByClassName("researchMenu_canvas_upgradeicon");
+            if (elements_canvas_upgradeicons.length > 0) {      //if not null
+                for (i = 0; i < elements_canvas_upgradeicons.length; i += 1) {
+                    upgradeicon_ctx = elements_canvas_upgradeicons[i].getContext("2d");
+                    upgradeicon_image = getImage(Main.Preloader, "icon_upgrade_unlockminer1.png");
+                    upgradeicon_ctx.drawImage(upgradeicon_image, 0, 0);
+                }
+            }
+        };
+        
         Main.information_player_logic = function () {
             var element_information, docfrag, table, row, column,
                 div_infowrapperplayer, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton,
@@ -531,6 +649,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             };
         };
+        Main.autominerArray.push(new Main.objectauto_miner(1));
         
         //refinery, refinery slots
         Main.player_refinery_initialization = function () {     //function to initialize the refinery function so logic can be called
@@ -1159,11 +1278,11 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
-                Main.autominerArray.push(new Main.objectauto_miner(1));
-                Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
+                Main.menuTotalObjects = 6;                  //number of objects that need to be loaded for this specific menu
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
                 Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
+                Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "infoPlayer", "information", "no image", Main.information_player_logic, Main.information_player_draw));
@@ -1181,6 +1300,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
                 Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
+                //Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "refinery_1", "StageLeft_1", "refinery_1.png", Main.object_rock_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "menurefinerycontainer", "StageLeft_1", "no_image", Main.object_menurefinerycontainer_logic, Main.object_menurefinerycontainer_draw));
@@ -1298,6 +1418,13 @@ Main.pipeline = function () {         //this function contains the entire game a
         for (i = 0; i < Main.autominerArray.length; i += 1) {       //loop through the autominerArray
             Main.autominerArray[i].logic();     //do the miners logic function
             Main.autominerArray[i].mine();      //tell it to mine
+        }
+        
+        //check upgrades
+        for (i = 0; i < Main.upgradesArray.length; i += 1) {        //loop through upgrades array
+            if (Main.upgradesArray[i].available === 0) {
+                Main.upgradesArray[i].availablecheck();
+            }
         }
         
         // reset inputs
