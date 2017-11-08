@@ -129,7 +129,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.documentFragment.appendChild(document.getElementsByClassName("Wrapper")[0]);      //set up the documentfragment
         
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        Mining and shit
+        Variable for game
         ----------------------------------------------------------*/
         //lowest level currency
         Main.ore = 0;                //this is what you are playing the game for!
@@ -220,38 +220,6 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
         };
         
-        //calibrate upgrades array!!!@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        Main.object_upgrade = function (name_of_upgrade) {          //upgrades to be kept in the upgrade array
-            this.initialized = 0;       //is this upgrade initialized?  0: just made.  1: ready to build canvas elements.
-            this.purchased = 0;         //does the player have this upgrade yet?
-            this.upgradename = name_of_upgrade;     //string that tells what upgrade this is
-            this.available = 0;         //should upgrade be made available to player?
-            //this.availablecheck   //function to check available status.
-            //this.iconimage      //icon image to use in research menu
-            //this.costcheck      //function to check cost status. 0 if player does not have money, 1 if player does
-            
-            //check what upgrade it is, then initialize vars based on the name
-            if (this.upgradename === "unlock_autominer1") {     //unlock first autominer
-                this.iconimage = getImage(Main.Preloader, "icon_upgrade_unlockminer1.png");         //set image for icon in research menu
-                this.availablecheck = function () {
-                    if (Main.material_refined_1_a >= 10) {
-                        this.available = 1;
-                    }
-                };
-                this.costcheck = function () {
-                    if (Main.material_refined_1_a >= 10 &&
-                       Main.material_refined_1_b >= 10) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                };
-                this.initialized = 1;
-            }
-        };
-        
-        Main.upgradesArray.push(new Main.object_upgrade("unlock_autominer1"));
-        
         //functions to process input///////////////////////////////////
         Main.mineOre = function (tier, strength, amount) {                       //the method for clicking ONCE
             var e1, chance_1_b, chance_1_a;
@@ -285,10 +253,31 @@ Main.pipeline = function () {         //this function contains the entire game a
         
         
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        Object functions: Mining menu
+        Object functions: Menus
         ----------------------------------------------------------*/
-        Main.portraitMenu_logic = function () {
-            
+        Main.object_popupmenu = function (type, subtype) {
+            var docfrag, i, div_wrapper, div_popupmenu, toplevelwrapper;
+            this.type = type;           //string to identify menu type
+            this.subtype = subtype;     //string to identify subtype of menu
+            toplevelwrapper = document.getElementById("wrapper");
+            docfrag = document.createDocumentFragment();
+            div_wrapper = document.createElement("div");
+            div_wrapper.id = "popupmenu_wrapper";
+            if (this.type === "upgrade") {
+                var upgradeobject, texttitle, textdescription;
+                for (i = 0; i < Main.upgradesArray.length; i += 1) {
+                    if (Main.upgradesArray[i].upgradename === this.subtype) {
+                        upgradeobject = Main.upgradesArray[i];
+                    }
+                }
+                div_popupmenu = document.createElement("div");
+                div_popupmenu.className = "popupmenu_upgrade";
+                texttitle = document.createElement("span");
+                textdescription = document.createElement("p");
+            }
+            div_wrapper.appendChild(div_popupmenu);
+            docfrag.appendChild(div_wrapper);
+            toplevelwrapper.appendChild(docfrag);
         };
         
         Main.researchmenu_logic = function () {
@@ -324,7 +313,6 @@ Main.pipeline = function () {         //this function contains the entire game a
                         upgrades_countavailable += 1;
                     }
                 }
-                console.log("wwwo ", upgrades_countadded, upgrades_countavailable);
                 if (upgrades_countadded < upgrades_countavailable) {     //if upgrades shown is less than how many are available, add them!
                     docfrag = document.createDocumentFragment();
                     for (i = 0; i < Main.upgradesArray.length; i += 1) {    //loop through all upgradesArray objects
@@ -350,8 +338,6 @@ Main.pipeline = function () {         //this function contains the entire game a
                         }
                     }
                 }
-                //for every array[i].available, do the following:
-                    //create canvas
             }
         };
         Main.researchmenu_draw = function () {
@@ -1262,6 +1248,70 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             }
         };
+        
+        /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        Upgrades
+        ----------------------------------------------------------*/
+        Main.object_upgrade = function (name_of_upgrade) {          //upgrades to be kept in the upgrade array
+            this.initialized = 0;       //is this upgrade initialized?  0: just made.  1: ready to build canvas elements.
+            this.purchased = 0;         //does the player have this upgrade yet?
+            this.upgradename = name_of_upgrade;     //string that tells what upgrade this is
+            this.available = 0;         //should upgrade be made available to player?
+            this.costarray = [];        //array carrying cost [string, #]
+            this.arraytocheck = [];     //converted costarray that just contains [#, #]
+            this.convertcostarray = function () {       //function to get a new arraytocheck
+                this.arraytocheck.length = 0;           //empty the old arraytocheck
+                this.arraytocheck = this.costarray.map(function (costarray_element) {       //get values to compare based on string name of material
+                    if (costarray_element[0] === "refined_1a") {
+                        return [Main.material_refined_1_a, costarray_element[1]];
+                    } else if (costarray_element[0] === "refined_1b") {
+                        return [Main.material_refined_1_b, costarray_element[1]];
+                    } 
+                });
+            }
+            this.availablecheck = function () {     //function to check available status.
+                var i, checkcount, checkthiscount;
+                this.convertcostarray();        //get new arraytocheck
+                checkcount = this.arraytocheck.length;      //initialize checkcounter values
+                checkthiscount = 0;
+                for (i = 0; i < this.arraytocheck.length; i += 1) {     //for every entry in array...
+                    if (this.arraytocheck[i][0] >= this.arraytocheck[i][1]) {       //if the value retrieved from Main is higher than the cost
+                        checkthiscount += 1;        //add to the check counter
+                    }
+                }
+                if (checkthiscount === checkcount) {
+                    this.available = 1;
+                }
+            };
+            this.costcheck = function () {
+                var i, checkcount, checkthiscount;
+                this.convertcostarray();        //get new arraytocheck
+                checkcount = this.arraytocheck.length;      //initialize checkcounter values
+                checkthiscount = 0;
+                for (i = 0; i < this.arraytocheck.length; i += 1) {     //for every entry in array...
+                    if (this.arraytocheck[i][0] >= this.arraytocheck[i][1]) {       //if the value retrieved from Main is higher than the cost
+                        checkthiscount += 1;        //add to the check counter
+                    }
+                }
+                if (checkthiscount === checkcount) {
+                    this.purchased = 1;
+                }
+            }
+            //this.iconimage      //icon image to use in research menu
+            //this.costcheck      //function to check cost status. 0 if player does not have money, 1 if player does
+            
+            //check what upgrade it is, then initialize vars based on the name
+            if (this.upgradename === "unlock_autominer1") {     //unlock first autominer
+                this.iconimage = getImage(Main.Preloader, "icon_upgrade_unlockminer1.png");         //set image for icon in research menu
+                this.costarray.push(        //define the cost array for this upgrade
+                    ["refined_1a", 10],
+                    ["refined_1b", 10]
+                );
+                this.initialized = 1;
+            }
+        };
+        
+        Main.upgradesArray.push(new Main.object_upgrade("unlock_autominer1"));
         
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Menu initialization functions

@@ -161,6 +161,14 @@ information
     border: 1px solid #000000;
 }
 
+/* pop up menu */
+#popupmenu_wrapper {
+    background-color: rgba(0, 0, 0, 0.6);
+    text-align: center;
+    height: 100%;
+    width: 100%;
+}
+
 /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 misc elements
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
