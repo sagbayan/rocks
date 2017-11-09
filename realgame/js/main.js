@@ -30,7 +30,8 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     "icon_oreCounter_1b.png",
     "icon_oreCounter_1bref.png",
     "icon_autominerselect_tier0.png",
-    "icon_upgrade_unlockminer1.png"
+    "icon_upgrade_unlockminer1.png",
+    "icon_popupmenu_buy.png"
 ];
     
 
@@ -147,7 +148,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.player_mine_amount = 1;        //amount of cursors (determines how many in-game clicks per real-life click)
         
         //oreCounter
-        Main.player_oreCountermenu = 0;                //ore counter extended menu.  0 for close, 1 for opened.
+        Main.player_oreCountermenu = 1;                //ore counter extended menu.  0 for close, 1 for opened.
         //refinery
         Main.refineryObjectArray = [];      //array that holds refinery objects.  updated on every tick, on every screen
         Main.player_refinery_tier = 1;      //tier of refinery.  determines what ore can be smelted
@@ -259,12 +260,20 @@ Main.pipeline = function () {         //this function contains the entire game a
             var docfrag, i, div_wrapper, div_popupmenu, toplevelwrapper;
             this.type = type;           //string to identify menu type
             this.subtype = subtype;     //string to identify subtype of menu
+            this.initialized = 0;       //initialized
             toplevelwrapper = document.getElementById("wrapper");
             docfrag = document.createDocumentFragment();
             div_wrapper = document.createElement("div");
             div_wrapper.id = "popupmenu_wrapper";
+            div_wrapper.addEventListener("click", function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                div_wrapper = document.getElementById("popupmenu_wrapper");
+                div_wrapper.parentNode.removeChild(div_wrapper);
+            });
             if (this.type === "upgrade") {
-                var upgradeobject, texttitle, textdescription;
+                var upgradeobject, texttitle, textdescription, canvas_buttonbuy, context,
+                    table, row, column, costimage, costimage_getimgfunc, costspan;
                 for (i = 0; i < Main.upgradesArray.length; i += 1) {
                     if (Main.upgradesArray[i].upgradename === this.subtype) {
                         upgradeobject = Main.upgradesArray[i];
@@ -272,21 +281,75 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
                 div_popupmenu = document.createElement("div");
                 div_popupmenu.className = "popupmenu_upgrade";
-                texttitle = document.createElement("span");
+                div_popupmenu.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                });
+                texttitle = document.createElement("p");
+                texttitle.textContent = upgradeobject.texttitle;
+                div_popupmenu.appendChild(texttitle);
                 textdescription = document.createElement("p");
+                textdescription.textContent = upgradeobject.textdescription;
+                div_popupmenu.appendChild(textdescription);
+                
+                costimage_getimgfunc = function (upgradeobj, x) {    //helper function to get cost icons from upgrade costarray
+                    if (upgradeobj.costarray[x][0] === "refined_1a") {
+                        return getImage(Main.Preloader, "icon_oreCounter_1aref.png");
+                    } else if (upgradeobj.costarray[x][0] === "refined_1b") {
+                        return getImage(Main.Preloader, "icon_oreCounter_1bref.png");
+                    }
+                };
+                table = document.createElement("table");
+                for (i = 0; i < upgradeobject.costarray.length; i += 1) {       //loop through all elements of cost array
+                    row = document.createElement("tr");         //create row
+                    column = document.createElement("td");      //create column
+                    costimage = costimage_getimgfunc(upgradeobject, i);  //create image for element
+                    column.appendChild(costimage);              //append image to column
+                    row.appendChild(column);                    //append column
+                    column = document.createElement("td");      //create second column
+                    costspan = document.createElement("span");  //create span for cost
+                    costspan.textContent = upgradeobject.costarray[i][1];
+                    column.appendChild(costspan);               //append span to column
+                    row.appendChild(column);                    //append second column
+                    table.appendChild(row);                     //append row to table
+                }
+                div_popupmenu.appendChild(table);
+                canvas_buttonbuy = document.createElement("canvas");
+                canvas_buttonbuy.id = "popupmenu_buttonbuy";
+                canvas_buttonbuy.width = getImage(Main.Preloader, "icon_popupmenu_buy.png").width;
+                canvas_buttonbuy.height = getImage(Main.Preloader, "icon_popupmenu_buy.png").height;
+                canvas_buttonbuy.getContext("2d").drawImage(getImage(Main.Preloader, "icon_popupmenu_buy.png"), 0, 0);
+                canvas_buttonbuy.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    upgradeobject.costcheck();
+                    if (!upgradeobject.costcheck()) {
+                        canvas_buttonbuy = document.getElementById("popupmenu_buttonbuy");
+                        context = canvas_buttonbuy.getContext("2d");
+                        context.globalAlpha = 0.4;
+                        context.fillStyle = "red";
+                        context.fillRect(0, 0, canvas_buttonbuy.width, canvas_buttonbuy.height);
+                        context.globalAlpha = 1.0;
+                        setTimeout(function () {
+                            context.drawImage(getImage(Main.Preloader, "icon_popupmenu_buy.png"), 0, 0);
+                        }, 500);
+                    } else {
+                        div_wrapper = document.getElementById("popupmenu_wrapper");
+                        div_wrapper.parentNode.removeChild(div_wrapper);
+                    }
+                });
+                div_popupmenu.appendChild(canvas_buttonbuy);
             }
             div_wrapper.appendChild(div_popupmenu);
             docfrag.appendChild(div_wrapper);
             toplevelwrapper.appendChild(docfrag);
+            this.initialized = 1;
         };
         
         Main.researchmenu_logic = function () {
             var element_researchmenu, docfrag, i,
                 div_researchmenu_wrapper, span_researchmenu_title, div_researchmenu_select,
-                upgrades_countavailable, upgrades_countadded, upgrades_howmany,
+                upgrades_countavailable, upgrades_countadded,
                 canvas_tobedeleted,
                 canvas_upgradeicon;
-            upgrades_howmany = 0;       //initialize vars
             element_researchmenu = document.getElementsByClassName("researchMenu");
             if (!element_researchmenu[0].logicInitialized) {
                 upgrades_countadded = 0;        //how many icons are currently built
@@ -315,14 +378,16 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
                 if (upgrades_countadded < upgrades_countavailable) {     //if upgrades shown is less than how many are available, add them!
                     docfrag = document.createDocumentFragment();
-                    for (i = 0; i < Main.upgradesArray.length; i += 1) {    //loop through all upgradesArray objects
-                        if (Main.upgradesArray[i].initialized === 1 && Main.upgradesArray[i].purchased === 0 && Main.upgradesArray[i].available === 1) {      //if initialized state is 1, and upgrade was not purchased, canvas element needs to be built for this upgrade
+                    for (let i = 0; i < Main.upgradesArray.length; i += 1) {    //loop through all upgradesArray objects
+                        if (Main.upgradesArray[i].initialized === 1 && Main.upgradesArray[i].purchased === 0 && Main.upgradesArray[i].available === 1) {      //if initialized state is 1, and upgrade was not purchased, and it should be available, canvas element needs to be built for this upgrade
                             canvas_upgradeicon = document.createElement("canvas");      //build canvas
                             canvas_upgradeicon.width = Main.upgradesArray[i].iconimage.width;
                             canvas_upgradeicon.height = Main.upgradesArray[i].iconimage.height;
                             canvas_upgradeicon.className = "researchMenu_canvas_upgradeicon";
                             canvas_upgradeicon.id = "researchMenu_canvas_upgradeicon_" + Main.upgradesArray[i].upgradename;      //give canvas an identifier by upgrade name
-                            //TODO: add event listener
+                            canvas_upgradeicon.addEventListener("click", function () {
+                                new Main.object_popupmenu("upgrade", Main.upgradesArray[i].upgradename);
+                            });
                             docfrag.appendChild(canvas_upgradeicon);    //append it into the icon select list shown to player
                         }
                     }
@@ -332,7 +397,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                     console.log("wooow");
                     for (i = 0; i < Main.upgradesArray.length; i += 1) {     //loop through all upgradesArray objects
                         if (Main.upgradesArray[i].purchased === 1) {        //if the upgrade has been purchased, we need to find its canvas and remove it
-                            canvas_tobedeleted = document.getElementById("researchMenu_canvas_icon_" + Main.upgradesArray[i].upgradename);      //find the canvas
+                            canvas_tobedeleted = document.getElementById("researchMenu_canvas_upgradeicon_" + Main.upgradesArray[i].upgradename);      //find the canvas
                             canvas_tobedeleted.parentNode.removeChild(canvas_tobedeleted);      //delete it
                             upgrades_countadded -= 1;       //upgrade the count added number to break the if statement
                         }
@@ -342,13 +407,17 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         Main.researchmenu_draw = function () {
             var elements_canvas_upgradeicons, i,
-                upgradeicon_image, upgradeicon_ctx;
+                name_from_canvas, upgradeobj, upgradeicon_image, upgradeicon_ctx;
             //draw canvases for upgradeicons
             elements_canvas_upgradeicons = document.getElementsByClassName("researchMenu_canvas_upgradeicon");
             if (elements_canvas_upgradeicons.length > 0) {      //if not null
                 for (i = 0; i < elements_canvas_upgradeicons.length; i += 1) {
+                    name_from_canvas = elements_canvas_upgradeicons[i].id.replace("researchMenu_canvas_upgradeicon_","");       //find object given its name
+                    upgradeobj = Main.upgradesArray.find(function (upgradeobj) {
+                        return upgradeobj.upgradename === name_from_canvas;
+                    });
                     upgradeicon_ctx = elements_canvas_upgradeicons[i].getContext("2d");
-                    upgradeicon_image = getImage(Main.Preloader, "icon_upgrade_unlockminer1.png");
+                    upgradeicon_image = upgradeobj.iconimage;
                     upgradeicon_ctx.drawImage(upgradeicon_image, 0, 0);
                 }
             }
@@ -464,6 +533,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 canvas_autoblankselect_tier0.addEventListener("click", function () {
                     Main.autominerArray_typeselected = 1;
                 });
+                canvas_autoblankselect_tier0.style.display = "none";
                 div_infowrapper_select.appendChild(canvas_autoblankselect_tier0);
                 div_infowrapperautoblank.appendChild(span_autoblank);
                 div_infowrapperautoblank.appendChild(div_infowrapper_select);
@@ -493,6 +563,14 @@ Main.pipeline = function () {         //this function contains the entire game a
                 if (infostate === 1) {
                     div_infowrapperplayer.style.display = "none";
                     if (Main.autominerArray_typeselected === 0) {       //if no miner selected
+                        for (let i = 0; i < Main.autominerArray.length; i += 1) {
+                            if (Main.autominerArray[i].type === 1) {    //if there is a type miner 1
+                                document.getElementById("infoPlayer_canvas_autoblankselect_tier0").style.display = "block";     //find the canvas that was assigned to that and show it
+                            }
+                            if (Main.autominerArray[i].type === 2) {    //if there is a type miner 1
+                                document.getElementById("infoPlayer_canvas_autoblankselect_tier1").style.display = "block";     //find the canvas that was assigned to that and show it
+                            }
+                        }
                         div_infowrapperautoblank.style.display = "block";
                         div_infowrapperauto.style.display = "none";
                     } else {
@@ -517,7 +595,8 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         
         Main.information_player_draw = function () {
-            var i, element_information, ctx, img, elements_upgradebutton, div_infowrapperplayer, div_infowrapperauto, div_infowrapperautoblank;
+            var i, element_information, ctx, img, elements_upgradebutton, div_infowrapperplayer, div_infowrapperauto, div_infowrapperautoblank,
+                canvas_autoblankselect_tier0;
             element_information = document.getElementsByClassName("infoPlayer");
             if (element_information[0].logicInitialized) {
                 //draw all the upgrade buttons
@@ -533,32 +612,47 @@ Main.pipeline = function () {         //this function contains the entire game a
                     }
                 }
                 if (div_infowrapperautoblank !== null) {
-                    ctx = document.getElementById("infoPlayer_canvas_autoblankselect_tier0").getContext("2d");
-                    img = getImage(Main.Preloader, "icon_autominerselect_tier0.png");
-                    ctx.drawImage(img, 0, 0);
+                    canvas_autoblankselect_tier0 = document.getElementById("infoPlayer_canvas_autoblankselect_tier0");
+                    if (canvas_autoblankselect_tier0.style.display !== "none") {
+                        ctx = document.getElementById("infoPlayer_canvas_autoblankselect_tier0").getContext("2d");
+                        img = getImage(Main.Preloader, "icon_autominerselect_tier0.png");
+                        ctx.drawImage(img, 0, 0);
+                    }
                 }
             }
         };
         
         //left-side menu buttons
         Main.object_button_mines_logic = function () {
-            var element_button;
+            var element_button, slidestate;
             element_button = document.getElementsByClassName("button_mines");
             for (let i = 0; i < element_button.length; i += 1) {
                 if (!element_button[i].logicInitialized) {
                     //element_button[i].style.opacity = 0.1;
                     if (!element_button[i].hasListener) {
                         element_button[i].addEventListener("mouseover", function () {
-                            //element_button[i].style.opacity = 1;
+                            slidestate = 1;
                         });
                         element_button[i].addEventListener("mouseout", function () {
-                            //element_button[i].style.opacity = 0.1;
+                            slidestate = 0;
                         });
                         element_button[i].addEventListener("click", function () {
-                            Main.changeToMenu(0);
+                            if (Main.stateMenu !== 0) {
+                                Main.changeToMenu(0);
+                            }
                         });
                         element_button[i].hasListener = 1;
                         element_button[i].logicInitialized = 1;
+                    }
+                } else {
+                    if (!slidestate) {
+                        if (element_button[i].style.top > -50) {
+                            element_button[i].style.top -= 1;
+                        }
+                    } else {
+                        if (element_button[i].style.top < 50) {
+                            element_button[i].style.top += 1;
+                        }
                     }
                 }
             }
@@ -578,19 +672,21 @@ Main.pipeline = function () {         //this function contains the entire game a
                             slidestate = 0;
                         });
                         element_button[i].addEventListener("click", function () {
-                            Main.changeToMenu(1);
+                            if (Main.stateMenu !== 1) {
+                                Main.changeToMenu(1);
+                            }
                         });
                         element_button[i].hasListener = 1;
                         element_button[i].logicInitialized = 1;
                     }
                 } else {
                     if (!slidestate) {
-                        if (element_button[i].style.left > -50) {
-                            element_button[i].style.left -= 1;
+                        if (element_button[i].style.top > -50) {
+                            element_button[i].style.top -= 1;
                         }
                     } else {
-                        if (element_button[i].style.left < 50) {
-                            element_button[i].style.left += 1;
+                        if (element_button[i].style.top < 50) {
+                            element_button[i].style.top += 1;
                         }
                     }
                 }
@@ -615,7 +711,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         //autominer objects
         Main.objectauto_miner = function (type) {
-            this.type = type;       //type of miner.  Determines initial stats, look, etc.
+            this.type = type;       //type of miner.  Determines initial stats, look, etc.  starts at 1
             this.count = 1;      //how many of this miner.  Starts initially at 1
             this.currentTick = 0;       //tick timer
             //calculate initial vars
@@ -635,7 +731,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             };
         };
-        Main.autominerArray.push(new Main.objectauto_miner(1));
+        //Main.autominerArray.push(new Main.objectauto_miner(1));
         
         //refinery, refinery slots
         Main.player_refinery_initialization = function () {     //function to initialize the refinery function so logic can be called
@@ -1257,8 +1353,13 @@ Main.pipeline = function () {         //this function contains the entire game a
             this.purchased = 0;         //does the player have this upgrade yet?
             this.upgradename = name_of_upgrade;     //string that tells what upgrade this is
             this.available = 0;         //should upgrade be made available to player?
+            this.availarray = [];        //array carrying cost [string, #]
             this.costarray = [];        //array carrying cost [string, #]
             this.arraytocheck = [];     //converted costarray that just contains [#, #]
+            this.texttitle = "";        //name of upgrade to show onscreen
+            this.textdescription = "";  //text description to show
+            //this.upgradefunction      //function that is performed once upgrade is purchased
+            
             this.convertcostarray = function () {       //function to get a new arraytocheck
                 this.arraytocheck.length = 0;           //empty the old arraytocheck
                 this.arraytocheck = this.costarray.map(function (costarray_element) {       //get values to compare based on string name of material
@@ -1268,10 +1369,21 @@ Main.pipeline = function () {         //this function contains the entire game a
                         return [Main.material_refined_1_b, costarray_element[1]];
                     } 
                 });
-            }
+            };
+            this.converttocheckarray = function (whicharray) {
+                this.arraytocheck.length = 0;
+                this.arraytocheck = whicharray.map(function (array_elements) {
+                    if (array_elements[0] === "refined_1a") {
+                        return [Main.material_refined_1_a, array_elements[1]];
+                    } else if (array_elements[0] === "refined_1b") {
+                        return [Main.material_refined_1_b, array_elements[1]];
+                    } 
+                });
+            };
             this.availablecheck = function () {     //function to check available status.
                 var i, checkcount, checkthiscount;
-                this.convertcostarray();        //get new arraytocheck
+                //this.convertcostarray();        //get new arraytocheck
+                this.converttocheckarray(this.availarray);
                 checkcount = this.arraytocheck.length;      //initialize checkcounter values
                 checkthiscount = 0;
                 for (i = 0; i < this.arraytocheck.length; i += 1) {     //for every entry in array...
@@ -1283,7 +1395,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                     this.available = 1;
                 }
             };
-            this.costcheck = function () {
+            this.costcheck = function () {      //function to check cost status. 0 if player does not have money, 1 if player does
                 var i, checkcount, checkthiscount;
                 this.convertcostarray();        //get new arraytocheck
                 checkcount = this.arraytocheck.length;      //initialize checkcounter values
@@ -1294,19 +1406,33 @@ Main.pipeline = function () {         //this function contains the entire game a
                     }
                 }
                 if (checkthiscount === checkcount) {
+                    this.upgradefunction();
                     this.purchased = 1;
+                    return true;
+                } else {
+                    return false;
                 }
-            }
+            };
             //this.iconimage      //icon image to use in research menu
-            //this.costcheck      //function to check cost status. 0 if player does not have money, 1 if player does
             
             //check what upgrade it is, then initialize vars based on the name
             if (this.upgradename === "unlock_autominer1") {     //unlock first autominer
                 this.iconimage = getImage(Main.Preloader, "icon_upgrade_unlockminer1.png");         //set image for icon in research menu
+                this.availarray.push(
+                    ["refined_1a", 1],
+                    ["refined_1b", 1]
+                );
                 this.costarray.push(        //define the cost array for this upgrade
                     ["refined_1a", 10],
                     ["refined_1b", 10]
                 );
+                this.texttitle = "Hire Laborers";
+                this.textdescription = "Laborers are now willing to work with you.  They take payments in pain and suffering.";
+                this.upgradefunction = function () {
+                    if (Main.autominerArray.length === 0) {
+                        Main.autominerArray.push(new Main.objectauto_miner(1));
+                    }
+                };
                 this.initialized = 1;
             }
         };
@@ -1346,11 +1472,11 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             }
             if (statemenu === 1) {                              //if requested to initialize mining menu...
-                Main.menuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
+                Main.menuTotalObjects = 6;                  //number of objects that need to be loaded for this specific menu
                 Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
                 Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
-                //Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
+                Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "refinery_1", "StageLeft_1", "refinery_1.png", Main.object_rock_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "menurefinerycontainer", "StageLeft_1", "no_image", Main.object_menurefinerycontainer_logic, Main.object_menurefinerycontainer_draw));
