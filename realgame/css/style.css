@@ -24,7 +24,7 @@ div classes
 }
 
 .StageLeft {                    /*inside div, class=wrapper*/
-    background-color: #808080;  /*dark gray*/
+    background-color: rgba(200, 200, 200, 1);  /*dark gray*/
     position: absolute;
     text-align: center;
 	z-index: -10;
@@ -70,8 +70,7 @@ information
     background-color: #00ff00;
     z-index: 20;
     text-align: center;
-    margin-left: auto;
-    margin-right: auto;
+    margin: auto;
     margin-top: 10px;
     margin-bottom: 10px;
     height: 350px;
@@ -99,14 +98,17 @@ information
     height: 150px;
     width: 220px;
 }
+#infoPlayer_div_infowrapperautoblank, #infoPlayer_canvas_autoblankselect_tier0 {
+    margin: auto;
+    width: 220px;
+}
 
 .Statistics {                   /*inside div, stageLeft or stageRight*/
     background-color: #FF0000;  /*red*/
     z-index: 20;
     position: fixed;
     left: 10px;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    top: 10px;
     height: 75px;
     width: 260px;
 }
@@ -137,6 +139,9 @@ information
     margin-bottom: 10px;
     height: 268px;
     width: 240px;
+}
+#researchMenu_div_researchmenu_wrapper {
+    text-align: center;
 }
 
 .MenuOption {
@@ -232,6 +237,23 @@ misc elements
     width: 400px;
     border: 1px solid #000000;
 }
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+generic text
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.span_title {
+    margin: auto;
+    font-family: 'Rajdhani', sans-serif;
+    color: white;
+    font-size: 20;
+    font-weight: bold;
+}
+.info_spandata {
+    font-family: 'Rajdhani', sans-serif;
+    color: black;
+    font-size: 14;
+    font-weight: bold;
+}
+
 /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ore counter 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/

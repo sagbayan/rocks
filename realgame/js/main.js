@@ -126,8 +126,13 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.menuObjectArray = [];   //array that holds all the objects in a menu
         Main.stateMenuChanging = 0;  //tells if the menu is currently being changed.
         
-        Main.documentFragment = document.createDocumentFragment();      //used for updating the elements onscreen
-        Main.documentFragment.appendChild(document.getElementsByClassName("Wrapper")[0]);      //set up the documentfragment
+        Main.HUDstateMenu = 0;          //same as above, but for HUD overlay (seperate from ingame menu)
+        Main.HUDmenuInitialized = 0;
+        Main.HUDmenuObjectArray = [];
+        Main.HUDstateMenuChanging = 0;
+        
+        /*loading and stuff*/
+        Main.askingtoload = 0;      //tells Loop iif request was made to load a game (which modifies alot of variables)
         
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Variable for game
@@ -179,7 +184,7 @@ Main.pipeline = function () {         //this function contains the entire game a
             
             while (this.initialized !== 1) {
                 var parentElement, e1, e2;
-                parentElement = Main.documentFragment.querySelectorAll("#"+this.parentid)[0];
+                parentElement = document.querySelectorAll("#" + this.parentid)[0];
                 if (this.objecttype === 0) {    //if image       
                     e1 = document.createElement("canvas");
                     e1.className = this.name;
@@ -330,7 +335,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                         context.globalAlpha = 1.0;
                         setTimeout(function () {
                             context.drawImage(getImage(Main.Preloader, "icon_popupmenu_buy.png"), 0, 0);
-                        }, 500);
+                        }, 250);
                     } else {
                         div_wrapper = document.getElementById("popupmenu_wrapper");
                         div_wrapper.parentNode.removeChild(div_wrapper);
@@ -357,7 +362,8 @@ Main.pipeline = function () {         //this function contains the entire game a
                 div_researchmenu_wrapper = document.createElement("div");
                 div_researchmenu_wrapper.id = "researchMenu_div_researchmenu_wrapper";
                 span_researchmenu_title = document.createElement("span");
-                span_researchmenu_title.textContent = "Upgrades below:";
+                span_researchmenu_title.className = "span_title";
+                span_researchmenu_title.textContent = "Upgrades";
                 div_researchmenu_select = document.createElement("div");
                 div_researchmenu_select.id = "researchMenu_div_researchmenu_select";
                 div_researchmenu_wrapper.appendChild(span_researchmenu_title);
@@ -425,7 +431,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         
         Main.information_player_logic = function () {
             var element_information, docfrag, table, row, column,
-                div_infowrapperplayer, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton,
+                div_infowrapperplayer, span_title, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton,
                 div_infowrapperauto, span_auto_type, span_auto_count, span_auto_ratetotal, canvas_autocountupgrade, canvas_autorateupgrade,
                 div_infowrapperautoblank, span_autoblank, div_infowrapper_select, canvas_autoblankselect_tier0,
                 scrollPosition, scrollflipY, infostate, autominertypeselected;
@@ -435,6 +441,10 @@ Main.pipeline = function () {         //this function contains the entire game a
                 docfrag = document.createDocumentFragment();
                 div_infowrapperplayer = document.createElement("div");
                 div_infowrapperplayer.id = "infoPlayer_div_infowrapperplayer";
+                span_title = document.createElement("span");
+                span_title.textContent = "Player Stats";
+                span_title.className = "span_title";
+                div_infowrapperplayer.appendChild(span_title);
                 span_playertier = document.createElement("span");
                 span_playertier.id = "infoPlayer_span_playertier";
                 span_playertier.className = "info_spandata";
@@ -475,6 +485,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                 //div for autominer info
                 div_infowrapperauto = document.createElement("div");
                 div_infowrapperauto.id = "infoAuto_div_infowrapperauto";
+                span_title = document.createElement("span");
+                span_title.textContent = "Miner Stats";
+                span_title.className = "span_title";
                 span_auto_type = document.createElement("span");
                 span_auto_type.id = "infoAuto_span_auto_type";
                 span_auto_count = document.createElement("span");
@@ -524,6 +537,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 span_autoblank = document.createElement("span");
                 span_autoblank.id = "infoPlayer_span_autoblank";
                 span_autoblank.textContent = "Please select a miner.";
+                span_autoblank.className = "span_title";
                 div_infowrapper_select = document.createElement("div");
                 div_infowrapper_select.id = "infoPlayer_div_infowrapper_select";
                 canvas_autoblankselect_tier0 = document.createElement("canvas");
@@ -549,7 +563,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                 if (scrollPosition <= scrollflipY) {    //check which menu should be showing
                     infostate = 0;       //0 if player menu, 1 if automining menu
                 } else {
-                    infostate = 1;
+                    if (Main.autominerArray.length > 0) {
+                        infostate = 1;
+                    }
                 }
                 if (infostate === 0) {  //make the div visible then do the necessary logic
                     div_infowrapperauto.style.display = "none";
@@ -577,8 +593,11 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div_infowrapperautoblank.style.display = "none";
                         div_infowrapperauto.style.display = "block";
                         span_auto_type = document.getElementById("infoAuto_span_auto_type");
+                        span_auto_type.className = "span_paragraph1";
                         span_auto_count = document.getElementById("infoAuto_span_auto_count");
+                        span_auto_count.className = "span_paragraph1";
                         span_auto_ratetotal = document.getElementById("infoAuto_span_auto_ratetotal");
+                        span_auto_ratetotal.className = "span_paragraph1";
                         //find the object in the objectautominer array
                         for (var i = 0; i < Main.autominerArray.length; i += 1) {
                             if (Main.autominerArray[i].type === Main.autominerArray_typeselected) {
@@ -1440,6 +1459,91 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.upgradesArray.push(new Main.object_upgrade("unlock_autominer1"));
         
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        Save/Load functions
+        ----------------------------------------------------------*/
+        Main.saveGame = function () {
+            var object_savegame = {       //object to stringify for save
+            //lowest level currency
+            save_ore: Main.ore,                //this is what you are playing the game for!
+            save_money: Main.money,                 //sell shit, get money, buy more shit
+
+            //second level currency
+            save_material_ore_1_a: Main.material_ore_1_a,
+            save_material_refined_1_a: Main.material_refined_1_a,
+            save_material_ore_1_b: Main.material_ore_1_b,
+            save_material_refined_1_b: Main.material_refined_1_b,
+
+            //player's click
+            save_player_mine_tier: Main.player_mine_tier,          //tier of mining ability (determines what ores can be mined)
+            save_player_mine_strength: Main.player_mine_strength,      //strength of mining ability (determines how many "mines" per in-game click)
+            save_player_mine_amount: Main.player_mine_amount,        //amount of cursors (determines how many in-game clicks per real-life click)
+
+            //oreCounter
+            save_player_oreCountermenu: Main.player_oreCountermenu,                //ore counter extended menu.  0 for close, 1 for opened.
+            //refinery
+            save_refineryObjectArray: Main.refineryObjectArray,      //array that holds refinery objects.  updated on every tick, on every screen
+            save_player_refinery_tier: Main.player_refinery_tier,      //tier of refinery.  determines what ore can be smelted
+            save_player_refinery_rate: Main.player_refinery_rate,      //rate per sec that ore is smelted
+            save_player_refinery_slotcount: Main.player_refinery_slotcount, //number of smelting slots player can have
+            save_player_refinery_initialized: Main.player_refinery_initialized,   //determines if the refineryObjectArray is ready. starts at 0.
+
+            //autominer
+            save_autominerArray: Main.autominerArray,           //autominer array containing array objects
+            save_autominerArray_typeselected: Main.autominerArray_typeselected,       //which autominer currently has focus.  determines what info is shown in menu
+
+            //upgrade tracker
+            save_upgradesArray: Main.upgradesArray
+            };
+            
+            localStorage.setItem("object_savegame", JSON.stringify(object_savegame));
+        };
+        
+        Main.loadGame = function () {
+            var checkifundef, savedgamefile;
+            savedgamefile = JSON.parse(localStorage.getItem("object_savegame"));
+            checkifundef = function (vartowrite, vartocheck) {
+                if (typeof vartocheck !== "undefined") {
+                    return vartocheck;
+                } else {
+                    return vartowrite;
+                }
+            };
+            //lowest level currency
+            Main.ore = checkifundef(Main.ore, savedgamefile.save_ore);                //this is what you are playing the game for!
+            Main.money = checkifundef(Main.money, savedgamefile.save_money);                 //sell shit, get money, buy more shit
+
+            //second level currency
+            Main.material_ore_1_a = checkifundef(Main.material_ore_1_a, savedgamefile.save_material_ore_1_a);
+            Main.material_refined_1_a = checkifundef(Main.material_refined_1_a, savedgamefile.save_material_refined_1_a);
+            Main.material_ore_1_b = checkifundef(Main.material_ore_1_b, savedgamefile.save_material_ore_1_b);
+            Main.material_refined_1_b = checkifundef(Main.material_refined_1_b, savedgamefile.save_material_refined_1_b);
+
+            //player's click
+            Main.player_mine_tier = checkifundef(Main.player_mine_tier, savedgamefile.save_player_mine_tier);          //tier of mining ability (determines what ores can be mined)
+            Main.player_mine_strength = checkifundef(Main.player_mine_strength, savedgamefile.save_player_mine_strength);      //strength of mining ability (determines how many "mines" per in-game click)
+            Main.player_mine_amount = checkifundef(Main.player_mine_amount, savedgamefile.save_player_mine_amount);        //amount of cursors (determines how many in-game clicks per real-life click)
+
+            //oreCounter
+            Main.player_oreCountermenu = checkifundef(Main.player_oreCountermenu, savedgamefile.save_player_oreCountermenu);                //ore counter extended menu.  0 for close, 1 for opened.
+            //refinery
+            Main.refineryObjectArray = checkifundef(Main.refineryObjectArray, savedgamefile.save_refineryObjectArray);      //array that holds refinery objects.  updated on every tick, on every screen
+            Main.player_refinery_tier = checkifundef(Main.player_refinery_tier, savedgamefile.save_player_refinery_tier);      //tier of refinery.  determines what ore can be smelted
+            Main.player_refinery_rate = checkifundef(Main.player_refinery_rate, savedgamefile.save_player_refinery_rate);      //rate per sec that ore is smelted
+            Main.player_refinery_slotcount = checkifundef(Main.player_refinery_slotcount, savedgamefile.save_player_refinery_slotcount); //number of smelting slots player can have
+            Main.player_refinery_initialized = checkifundef(Main.player_refinery_initialized, savedgamefile.save_player_refinery_initialized);   //determines if the refineryObjectArray is ready. starts at 0.
+
+            //autominer
+            Main.autominerArray = checkifundef(Main.autominerArray, savedgamefile.save_autominerArray);           //autominer array containing array objects
+            Main.autominerArray_typeselected = checkifundef(Main.autominerArray_typeselected, savedgamefile.save_autominerArray_typeselected);       //which autominer currently has focus.  determines what info is shown in menu
+
+            //upgrade tracker
+            Main.upgradesArray = checkifundef(Main.upgradesArray, savedgamefile.save_upgradesArray);            //contains upgrades
+        };
+        
+        Main.deleteSave = function () {
+            localStorage.removeItem("object_savegame");
+        };
+        /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Menu initialization functions
         ----------------------------------------------------------*/
         Main.menuObjectInitialize = function (object) {
@@ -1449,34 +1553,37 @@ Main.pipeline = function () {         //this function contains the entire game a
                 console.log("obj array length ", Main.menuObjectArray.length);
             }
         };
-        
+        Main.HUDObjectInitialize = function (object) {
+            if (object.initialized) {
+                Main.HUDmenuObjectArray.push(object);
+            }
+        };
         Main.buildMenu = function (statemenu) {             //function to initialize objects for a menu.  Only call if menuinitialized = 0
             Main.menuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
-                Main.menuTotalObjects = 6;                  //number of objects that need to be loaded for this specific menu
-                Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
-                Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
-                Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
-                Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
+                Main.menuTotalObjects = 1;                  //number of objects that need to be loaded for this specific menu
+                //Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
+                //Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
+                //Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
+                //Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic));
-                Main.menuObjectInitialize(new Main.Object(2, "infoPlayer", "information", "no image", Main.information_player_logic, Main.information_player_draw));
+                //Main.menuObjectInitialize(new Main.Object(2, "infoPlayer", "information", "no image", Main.information_player_logic, Main.information_player_draw));
                 
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
                         console.log("we done here");
-                        document.body.appendChild(Main.documentFragment);
                         Main.menuInitialized = 1;               //declare menu is initialized    
                     }
                 }
             }
             if (statemenu === 1) {                              //if requested to initialize mining menu...
-                Main.menuTotalObjects = 6;                  //number of objects that need to be loaded for this specific menu
-                Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
-                Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
-                Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
-                Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
+                Main.menuTotalObjects = 2;                  //number of objects that need to be loaded for this specific menu
+                //Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
+                //Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
+                //Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
+                //Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
                 
                 Main.menuObjectInitialize(new Main.Object(0, "refinery_1", "StageLeft_1", "refinery_1.png", Main.object_rock_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "menurefinerycontainer", "StageLeft_1", "no_image", Main.object_menurefinerycontainer_logic, Main.object_menurefinerycontainer_draw));
@@ -1484,20 +1591,36 @@ Main.pipeline = function () {         //this function contains the entire game a
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
                         console.log("we done here");
-                        document.body.appendChild(Main.documentFragment);
                         Main.menuInitialized = 1;               //declare menu is initialized    
                     }
                 }
             }
         };
+        Main.HUDbuildMenu = function (statemenu) {
+            Main.HUDmenuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
+            Main.HUDmenuObjectArray = [];                      //clear the menu object array
+            if (statemenu === 0) {                              //if requested to initialize mining menu...
+                Main.HUDmenuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
+                Main.HUDObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
+                Main.HUDObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
+                Main.HUDObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
+                Main.HUDObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
+                Main.HUDObjectInitialize(new Main.Object(2, "infoPlayer", "information", "no image", Main.information_player_logic, Main.information_player_draw));
+                
+                while (!Main.HUDmenuInitialized) {
+                    if (Main.HUDmenuObjectArray.length === Main.HUDmenuTotalObjects) {    //if all necessary objects are loaded into array
+                        console.log("we done here");
+                        Main.HUDmenuInitialized = 1;               //declare menu is initialized    
+                    }
+                }
+            }
+        };
         
-        Main.clearMenu = function () {          //function to clear the menu (before switching menu)
+        Main.clearMenu = function (targetarray) {          //function to clear the menu (before switching menu)
             var i, j, k, target, parent, children, props;
-            console.log("docfrag = ", Main.documentFragment);
-            Main.documentFragment.appendChild(document.getElementsByClassName("Wrapper")[0]);      //set up the documentfragment
-            for (i = 0; i < Main.menuObjectArray.length; i += 1) {      //loop through every object in the object array and delete the elements
-                target = Main.menuObjectArray[i];                           //set the target object
-                parent = Main.documentFragment.querySelectorAll("#" + target.parentid)[0];          //get the parent element from target object
+            for (i = 0; i < targetarray.length; i += 1) {      //loop through every object in the object array and delete the elements
+                target = targetarray[i];                           //set the target object
+                parent = document.querySelectorAll("#" + target.parentid)[0];          //get the parent element from target object
                 console.log("parent = ", parent);
                 children = parent.querySelectorAll("." + target.name);    //find the children (array) by class name
                 for (j = 0; j < children.length; j += 1) {              //loop through all children
@@ -1515,10 +1638,18 @@ Main.pipeline = function () {         //this function contains the entire game a
         
         Main.changeToMenu = function (statemenu_next) {
             Main.stateMenuChanging = 1;             //declare that the menu is currently being changed
-            Main.clearMenu();                       //clear menu of all objects and elements specific to menu
+            Main.clearMenu(Main.menuObjectArray);                       //clear menu of all objects and elements specific to menu
             if (Main.menuInitialized === 0) {
                 Main.stateMenu = statemenu_next;
                 Main.stateMenuChanging = 0;              //declare changing is done and engine can rebuild the menu again
+            }
+        };
+        Main.changeToHUDMenu = function (statemenu_next) {
+            Main.HUDstateMenuChanging = 1;             //declare that the menu is currently being changed
+            Main.clearMenu(Main.HUDmenuObjectArray);                       //clear menu of all objects and elements specific to menu
+            if (Main.HUDmenuInitialized === 0) {
+                Main.HUDstateMenu = statemenu_next;
+                Main.HUDstateMenuChanging = 0;              //declare changing is done and engine can rebuild the menu again
             }
         };
         
@@ -1555,7 +1686,19 @@ Main.pipeline = function () {         //this function contains the entire game a
         // listen for inputs
                                     //tell objects to listen
         // call functions to change variables based on inputs
-        if (!Main.stateMenuChanging) {              //if menu is not currently going through change...
+        
+        if (!Main.HUDstateMenuChanging) {       //do logic for hud elements
+            if (Main.HUDstateMenu === 0) {
+                if (!Main.HUDmenuInitialized) {
+                    Main.HUDbuildMenu(0);
+                } else {
+                    for (i = 0; i < Main.HUDmenuObjectArray.length; i += 1) {
+                        Main.HUDmenuObjectArray[i].logic();
+                    }
+                }
+            }
+        }
+        if (!Main.stateMenuChanging) {              //do logic for everything else....if menu is not currently going through change...
             if (Main.stateMenu === 0) {         //game is on the mining screen
                 if (!Main.menuInitialized) {            //if menu is not initialized, initialize it
                     Main.buildMenu(0);
@@ -1565,7 +1708,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                     }
                 }
             }
-            if (Main.stateMenu === 1) {         //game is on the mining screen
+            if (Main.stateMenu === 1) {         //game is on the refinery screen
                 if (!Main.menuInitialized) {            //if menu is not initialized, initialize it
                     Main.buildMenu(1);
                 } else {                                //if it is, then perform the logic function on all objects
@@ -1575,7 +1718,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             }
         }
-        //update auto units
+        
+        //update auto units@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        //refinery
         if (!Main.player_refinery_initialized) {        //if the refinery is not initialized...
             Main.player_refinery_initialization();          //initialize it
         } else {                                        //if it is initialized...
@@ -1591,19 +1736,21 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
         }
         
+        //autominers
         for (i = 0; i < Main.autominerArray.length; i += 1) {       //loop through the autominerArray
             Main.autominerArray[i].logic();     //do the miners logic function
             Main.autominerArray[i].mine();      //tell it to mine
         }
         
-        //check upgrades
+        //check upgrades@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         for (i = 0; i < Main.upgradesArray.length; i += 1) {        //loop through upgrades array
             if (Main.upgradesArray[i].available === 0) {
+                console.log("checking ", Main.upgradesArray[i]);
                 Main.upgradesArray[i].availablecheck();
             }
         }
         
-        // reset inputs
+        // finalize engine @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Main.tickEngine += 1;       //add to tick count
         Main.timerTracker = "engine complete";
     };
@@ -1614,10 +1761,17 @@ Main.pipeline = function () {         //this function contains the entire game a
     Main.Render = function () {     //this function renders the game
         // do rendering functions
         if (Main.timerTracker === "engine complete") {      //only call the render once the engine has done its job
+            var i;
+            if (!Main.HUDstateMenuChanging) {
+                if (Main.HUDmenuInitialized) {
+                    for (i = 0; i < Main.HUDmenuObjectArray.length; i += 1) {
+                        Main.HUDmenuObjectArray[i].draw();
+                    }
+                }
+            }
             if (!Main.stateMenuChanging) {
                 //Draw object canvases
                 if (Main.menuInitialized) {                               //if menu initialized, draw all objects in array
-                    var i;
                     Main.drawBackgrounds();
                     for (i = 0; i < Main.menuObjectArray.length; i += 1) {
                         Main.menuObjectArray[i].draw();
@@ -1633,6 +1787,11 @@ Main.pipeline = function () {         //this function contains the entire game a
     Define the method for running one frame of the actual game
     ----------------------------------------------------------*/
     Main.Loop = function () {       //this function runs the engine (and draw, if needed) in relation to Timer
+        //do loading and saving HERE
+        if (Main.askingtoload === 1) {
+            Main.loadGame();
+            Main.askingtoload = 0;
+        }
         Main.Engine();              //run engine
         //add time compensation methods if needed
         Main.TickLoop += 1;         //add to tick count
