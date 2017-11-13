@@ -229,6 +229,18 @@ misc elements
 .button_refinery:hover {
     opacity: 1;
 }
+.button_abyss {
+    position: relative;
+    display: inline;
+    margin: 10px;
+    margin-bottom: 0px;
+    opacity: 0.1;
+    height: 75px;
+    width: 75px;
+}
+.button_abyss:hover {
+    opacity: 1;
+}
 
 .refinery_1 {
     position: relative;

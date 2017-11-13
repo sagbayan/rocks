@@ -19,6 +19,7 @@ var imageSrcArrayReference = [      //reference for filenames for all images to 
     "refinery_1.png",
     "button_mines.png",
     "button_refinery.png",
+    "button_abyss.png",
     "cancel.png",
     "icon_refinery_ore1a.png",
     "icon_refinery_ore1b.png",
@@ -142,6 +143,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.money = 0;                 //sell shit, get money, buy more shit
         
         //second level currency
+        Main.material_fluid1 = 0;           //extra ore can be scrapped in refinery to produce fluid
         Main.material_ore_1_a = 0;
         Main.material_refined_1_a = 0;
         Main.material_ore_1_b = 0;
@@ -167,6 +169,12 @@ Main.pipeline = function () {         //this function contains the entire game a
         
         //upgrade tracker
         Main.upgradesArray = [];            //contains upgrades
+        
+        //abyss
+        Main.abyssdiverArray = [];               //TODO: add to save/load mechanic.  abyss array that holds cave diver objects.
+        Main.abyssequipmentArray = [];          //TODO: add to save/load mechanic.  abyss array that holds equipment when not on a diver.
+        Main.player_abyss_initialized = 0;      //determines if abyss arrays are ready.  starts at 0;
+        Main.player_abyss_slotcount = 1;        //number of abyss divers player can have.  starts at 1;
         
         //define objects to be used in the game
         Main.Object = function (objecttype, str_name, str_parentid, str_imagename, function_logic, function_draw) {
@@ -325,7 +333,6 @@ Main.pipeline = function () {         //this function contains the entire game a
                 canvas_buttonbuy.getContext("2d").drawImage(getImage(Main.Preloader, "icon_popupmenu_buy.png"), 0, 0);
                 canvas_buttonbuy.addEventListener("click", function (e) {
                     e.stopPropagation();
-                    upgradeobject.costcheck();
                     if (!upgradeobject.costcheck()) {
                         canvas_buttonbuy = document.getElementById("popupmenu_buttonbuy");
                         context = canvas_buttonbuy.getContext("2d");
@@ -432,7 +439,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.information_player_logic = function () {
             var element_information, docfrag, table, row, column,
                 div_infowrapperplayer, span_title, span_playertier, span_playerstrength, canvas_tierupgradebutton, canvas_strengthupgradebutton,
-                div_infowrapperauto, span_auto_type, span_auto_count, span_auto_ratetotal, canvas_autocountupgrade, canvas_autorateupgrade,
+                div_infowrapperauto, span_auto_type, span_auto_count, span_auto_rate, span_auto_ratetotal, canvas_autocountupgrade,
                 div_infowrapperautoblank, span_autoblank, div_infowrapper_select, canvas_autoblankselect_tier0,
                 scrollPosition, scrollflipY, infostate, autominertypeselected;
             element_information = document.getElementsByClassName("infoPlayer");
@@ -490,9 +497,13 @@ Main.pipeline = function () {         //this function contains the entire game a
                 span_title.className = "span_title";
                 span_auto_type = document.createElement("span");
                 span_auto_type.id = "infoAuto_span_auto_type";
+                span_auto_type.className = "info_spandata";
                 span_auto_count = document.createElement("span");
                 span_auto_count.id = "infoAuto_span_auto_count";
                 span_auto_count.className = "info_spandata";
+                span_auto_rate = document.createElement("span");
+                span_auto_rate.className = "info_spandata";
+                span_auto_rate.id = "infoAuto_span_auto_rate";
                 span_auto_ratetotal = document.createElement("span");
                 span_auto_ratetotal.id = "infoAuto_span_auto_ratetotal";
                 span_auto_ratetotal.className = "info_spandata";
@@ -501,11 +512,6 @@ Main.pipeline = function () {         //this function contains the entire game a
                 canvas_autocountupgrade.className = "info_buttonupgrade";
                 canvas_autocountupgrade.width = getImage(Main.Preloader, "icon_upgrade.png").width;
                 canvas_autocountupgrade.height = getImage(Main.Preloader, "icon_upgrade.png").height;
-                canvas_autorateupgrade = document.createElement("canvas");
-                canvas_autorateupgrade.id = "infoAuto_canvas_autorateupgrade";
-                canvas_autorateupgrade.className = "info_buttonupgrade";
-                canvas_autorateupgrade.width = getImage(Main.Preloader, "icon_upgrade.png").width;
-                canvas_autorateupgrade.height = getImage(Main.Preloader, "icon_upgrade.png").height;
                 
                 table = document.createElement("table");
                 row = document.createElement("tr");
@@ -515,16 +521,18 @@ Main.pipeline = function () {         //this function contains the entire game a
                 table.appendChild(row);
                 row = document.createElement("tr");
                 column = document.createElement("td");
-                column.appendChild(canvas_autocountupgrade);
+                column.appendChild(span_auto_count);
                 row.appendChild(column);
                 column = document.createElement("td");
-                column.appendChild(span_auto_count);
+                column.appendChild(canvas_autocountupgrade);
                 row.appendChild(column);
                 table.appendChild(row);
                 row = document.createElement("tr");
                 column = document.createElement("td");
-                column.appendChild(canvas_autorateupgrade);
+                column.appendChild(span_auto_rate);
                 row.appendChild(column);
+                table.appendChild(row);
+                row = document.createElement("tr");
                 column = document.createElement("td");
                 column.appendChild(span_auto_ratetotal);
                 row.appendChild(column);
@@ -593,11 +601,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                         div_infowrapperautoblank.style.display = "none";
                         div_infowrapperauto.style.display = "block";
                         span_auto_type = document.getElementById("infoAuto_span_auto_type");
-                        span_auto_type.className = "span_paragraph1";
                         span_auto_count = document.getElementById("infoAuto_span_auto_count");
-                        span_auto_count.className = "span_paragraph1";
+                        span_auto_rate = document.getElementById("infoAuto_span_auto_rate");
                         span_auto_ratetotal = document.getElementById("infoAuto_span_auto_ratetotal");
-                        span_auto_ratetotal.className = "span_paragraph1";
                         //find the object in the objectautominer array
                         for (var i = 0; i < Main.autominerArray.length; i += 1) {
                             if (Main.autominerArray[i].type === Main.autominerArray_typeselected) {
@@ -607,7 +613,8 @@ Main.pipeline = function () {         //this function contains the entire game a
                         //update span info based on object vars
                         span_auto_type.textContent = "Miner type: " + autominertypeselected.type;
                         span_auto_count.textContent = "Miner count: " + autominertypeselected.count;
-                        span_auto_ratetotal.textContent = "Miner rate (total): " + (autominertypeselected.rate * autominertypeselected.count);
+                        span_auto_rate.textContent = "Miner rate: " + autominertypeselected.rate + " ore/sec";
+                        span_auto_ratetotal.textContent = "Miner rate (total): " + (autominertypeselected.rate * autominertypeselected.count) + " ore/sec";
                     }
                 }
             }
@@ -711,6 +718,25 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             }
         };
+        
+        Main.object_button_abyss_logic = function () {
+            var element_button;
+            element_button = document.getElementsByClassName("button_abyss");
+            for (let i = 0; i < element_button.length; i += 1) {
+                if (!element_button[i].logicInitialized) {
+                    if (!element_button[i].hasListener) {
+                        element_button[i].addEventListener("click", function () {
+                            if (Main.stateMenu !== 1) {
+                                Main.changeToMenu(2);
+                            }
+                        });
+                        element_button[i].hasListener = 1;
+                        element_button[i].logicInitialized = 1;
+                    }
+                }
+            }
+        };
+        
         //THE ROCK YOU CLICK ON
         Main.object_rock_logic = function () {
             var i, element_rock;
@@ -728,6 +754,36 @@ Main.pipeline = function () {         //this function contains the entire game a
                 }
             }
         };
+        //abyss object
+        Main.objectauto_abyssdiver = function () {
+            this.slotindex = 0;     //which diver is this
+            this.state = 0;         //menustate for diver slot
+            this.inventory = [];    //array that holds this diver's inventory.  will be populated with artifacts+count
+            this.targetdepth = 0;   //target depth of diver.
+            this.currentdepth = 0;  //when on a journey, where is the diver now?
+            this.rate = 0;          //how quickly does the diver dive
+            this.equipment = [];    //array that holds this diver's equipment.  will be populated with armor type string.
+            
+            /*
+            this.logic = function performed every tick.  manages menu, updates diver vars
+            */
+            Main.objectauto_abyssdiver_definefunctions(this);
+        };
+        
+        Main.objectauto_abyssdiver_definefunctions = function (objectauto_abyssdiver) {
+            if (typeof objectauto_abyssdiver.logic === "undefined") {
+                //state -1 - no diver in this slot.  Click to build one (brings up popupmenu)
+                //state 0 - menu select to "select equipment" or "refill fuel" or "dive!"
+                //state 1 - select equipment menu
+                //state 2 - refill fuel menu
+                //state 3 - "dive!" menu.  dropdown to select target depth zone
+                //state 4 - "confirm?"
+                //state 5 - diving...
+                //state 6 - dive was successful, tell what it brought back, allow a confirm to return to state 0
+                //state 7 - dive was not successful, tell what was lost, allow a confirm to return to state 0
+            }
+        };
+        
         //autominer objects
         Main.objectauto_miner = function (type) {
             this.type = type;       //type of miner.  Determines initial stats, look, etc.  starts at 1
@@ -739,16 +795,26 @@ Main.pipeline = function () {         //this function contains the entire game a
                 this.tier = 1;          //tier of mining.
                 this.rate = 1;          //how many times it clicks per sec (a sec in ticks is the framerate!)
             }
-            this.logic = function () {      //engine logic call.
-                this.timeoutlength = Main.framerate / this.rate;              //calculate the timeout for this function in ticks
-            };
-            this.mine = function () {       //mining function.  is called after logic
-                this.currentTick += 1;                              //add to tick
-                if (this.currentTick >= this.timeoutlength) {        //check if enough ticks have been achieved for it to mine
-                    Main.mineOre(this.tier, this.strength, this.count);     //mine ore based on its stats
-                    this.currentTick = 0;                           //reset the ticks
-                }
-            };
+            Main.objectauto_miner_definefunctions(this);
+        };
+        
+        Main.objectauto_miner_definefunctions = function(objectauto_miner) {    //function to provide methods for the autominer object
+            //check if it is defined
+                //if not, define it
+            if (typeof objectauto_miner.logic === "undefined") {
+                objectauto_miner.logic = function () {
+                    objectauto_miner.timeoutlength = Main.framerate / objectauto_miner.rate;
+                };
+            }
+            if (typeof objectauto_miner.mine === "undefined") {
+                objectauto_miner.mine = function () {
+                    objectauto_miner.currentTick += 1;
+                    if (objectauto_miner.currentTick >= objectauto_miner.timeoutlength) {
+                        Main.mineOre(objectauto_miner.tier, objectauto_miner.strength, objectauto_miner.count);
+                        objectauto_miner.currentTick = 0;
+                    }
+                };
+            }
         };
         //Main.autominerArray.push(new Main.objectauto_miner(1));
         
@@ -1377,62 +1443,14 @@ Main.pipeline = function () {         //this function contains the entire game a
             this.arraytocheck = [];     //converted costarray that just contains [#, #]
             this.texttitle = "";        //name of upgrade to show onscreen
             this.textdescription = "";  //text description to show
-            //this.upgradefunction      //function that is performed once upgrade is purchased
             
-            this.convertcostarray = function () {       //function to get a new arraytocheck
-                this.arraytocheck.length = 0;           //empty the old arraytocheck
-                this.arraytocheck = this.costarray.map(function (costarray_element) {       //get values to compare based on string name of material
-                    if (costarray_element[0] === "refined_1a") {
-                        return [Main.material_refined_1_a, costarray_element[1]];
-                    } else if (costarray_element[0] === "refined_1b") {
-                        return [Main.material_refined_1_b, costarray_element[1]];
-                    } 
-                });
-            };
-            this.converttocheckarray = function (whicharray) {
-                this.arraytocheck.length = 0;
-                this.arraytocheck = whicharray.map(function (array_elements) {
-                    if (array_elements[0] === "refined_1a") {
-                        return [Main.material_refined_1_a, array_elements[1]];
-                    } else if (array_elements[0] === "refined_1b") {
-                        return [Main.material_refined_1_b, array_elements[1]];
-                    } 
-                });
-            };
-            this.availablecheck = function () {     //function to check available status.
-                var i, checkcount, checkthiscount;
-                //this.convertcostarray();        //get new arraytocheck
-                this.converttocheckarray(this.availarray);
-                checkcount = this.arraytocheck.length;      //initialize checkcounter values
-                checkthiscount = 0;
-                for (i = 0; i < this.arraytocheck.length; i += 1) {     //for every entry in array...
-                    if (this.arraytocheck[i][0] >= this.arraytocheck[i][1]) {       //if the value retrieved from Main is higher than the cost
-                        checkthiscount += 1;        //add to the check counter
-                    }
-                }
-                if (checkthiscount === checkcount) {
-                    this.available = 1;
-                }
-            };
-            this.costcheck = function () {      //function to check cost status. 0 if player does not have money, 1 if player does
-                var i, checkcount, checkthiscount;
-                this.convertcostarray();        //get new arraytocheck
-                checkcount = this.arraytocheck.length;      //initialize checkcounter values
-                checkthiscount = 0;
-                for (i = 0; i < this.arraytocheck.length; i += 1) {     //for every entry in array...
-                    if (this.arraytocheck[i][0] >= this.arraytocheck[i][1]) {       //if the value retrieved from Main is higher than the cost
-                        checkthiscount += 1;        //add to the check counter
-                    }
-                }
-                if (checkthiscount === checkcount) {
-                    this.upgradefunction();
-                    this.purchased = 1;
-                    return true;
-                } else {
-                    return false;
-                }
-            };
+            //defined in the function initializer
             //this.iconimage      //icon image to use in research menu
+            //this.upgradefunction      //function that is performed once upgrade is purchased
+            //this.converttocheckarray  //function that initializes the check array to do avail/cost checks
+            //this.availcheck           //function to check if upgrade should be made available in menu
+            //this.costcheck            //function to check if player can buy the upgrade
+            //this.chargecost           //function to actually deduct materials from main vars
             
             //check what upgrade it is, then initialize vars based on the name
             if (this.upgradename === "unlock_autominer1") {     //unlock first autominer
@@ -1452,7 +1470,88 @@ Main.pipeline = function () {         //this function contains the entire game a
                         Main.autominerArray.push(new Main.objectauto_miner(1));
                     }
                 };
-                this.initialized = 1;
+            }
+            
+            Main.object_upgrade_definefunctions(this);
+            this.initialized = 1;
+        };
+        Main.object_upgrade_definefunctions = function (object_upgrade) {
+            if (typeof object_upgrade.converttocheckarray === "undefined") {
+                object_upgrade.converttocheckarray = function (whicharray) {
+                    object_upgrade.arraytocheck.length = 0;
+                    object_upgrade.arraytocheck = whicharray.map(function (array_elements) {
+                        if (array_elements[0] === "refined_1a") {
+                            return [Main.material_refined_1_a, array_elements[1]];
+                        } else if (array_elements[0] === "refined_1b") {
+                            return [Main.material_refined_1_b, array_elements[1]];
+                        } 
+                    });
+                };
+            }
+            if (typeof object_upgrade.chargecost === "undefined") {
+                object_upgrade.chargecost = function () {
+                    var i, vartocheck, costvalue;
+                    for (i = 0; i < object_upgrade.costarray.length; i += 1) {
+                        vartocheck = object_upgrade.costarray[i][0];
+                        costvalue = object_upgrade.costarray[i][1];
+                        if (vartocheck === "refined_1a") {
+                            Main.material_refined_1_a -= costvalue;
+                        } else if (vartocheck === "refined_1b") {
+                            Main.material_refined_1_b -= costvalue;
+                        }
+                    }
+                };
+            }
+            if (typeof object_upgrade.availablecheck === "undefined") {
+                object_upgrade.availablecheck = function () {     //function to check available status.
+                    var i, checkcount, checkthiscount;
+                    object_upgrade.converttocheckarray(object_upgrade.availarray);
+                    checkcount = object_upgrade.arraytocheck.length;      //initialize checkcounter values
+                    checkthiscount = 0;
+                    for (i = 0; i < object_upgrade.arraytocheck.length; i += 1) {     //for every entry in array...
+                        if (object_upgrade.arraytocheck[i][0] >= object_upgrade.arraytocheck[i][1]) {       //if the value retrieved from Main is higher than the cost
+                            checkthiscount += 1;        //add to the check counter
+                        }
+                    }
+                    if (checkthiscount === checkcount) {
+                        object_upgrade.available = 1;
+                    }
+                };
+            }
+            if (typeof object_upgrade.costcheck === "undefined") {
+                object_upgrade.costcheck = function () {      //function to check cost status. 0 if player does not have money, 1 if player does
+                    var i, checkcount, checkthiscount;
+                    object_upgrade.converttocheckarray(object_upgrade.costarray);        //get new arraytocheck
+                    checkcount = object_upgrade.arraytocheck.length;      //initialize checkcounter values
+                    checkthiscount = 0;
+                    for (i = 0; i < object_upgrade.arraytocheck.length; i += 1) {     //for every entry in array...
+                        if (object_upgrade.arraytocheck[i][0] >= object_upgrade.arraytocheck[i][1]) {       //if the value retrieved from Main is higher than the cost
+                            checkthiscount += 1;        //add to the check counter
+                        }
+                    }
+                    if (checkthiscount === checkcount) {
+                        object_upgrade.upgradefunction();
+                        object_upgrade.chargecost();
+                        object_upgrade.purchased = 1;
+                        return true;
+                    } else {
+                        return false;
+                    }
+                };
+            }
+            if (!(object_upgrade.iconimage instanceof HTMLImageElement)) {
+                if (object_upgrade.upgradename === "unlock_autominer1") {
+                    object_upgrade.iconimage = getImage(Main.Preloader, "icon_upgrade_unlockminer1.png");
+                }
+            }
+            if (typeof object_upgrade.upgradefunction === "undefined") {
+                if (object_upgrade.upgradename === "unlock_autominer1") {
+                    object_upgrade.upgradefunction = function () {
+                        if (Main.autominerArray.length === 0) {
+                            Main.autominerArray.push(new Main.objectauto_miner(1));
+                        }
+                    };
+                }
             }
         };
         
@@ -1499,8 +1598,9 @@ Main.pipeline = function () {         //this function contains the entire game a
         };
         
         Main.loadGame = function () {
-            var checkifundef, savedgamefile;
+            var i, checkifundef, savedgamefile;
             savedgamefile = JSON.parse(localStorage.getItem("object_savegame"));
+            
             checkifundef = function (vartowrite, vartocheck) {
                 if (typeof vartocheck !== "undefined") {
                     return vartocheck;
@@ -1508,6 +1608,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                     return vartowrite;
                 }
             };
+            
             //lowest level currency
             Main.ore = checkifundef(Main.ore, savedgamefile.save_ore);                //this is what you are playing the game for!
             Main.money = checkifundef(Main.money, savedgamefile.save_money);                 //sell shit, get money, buy more shit
@@ -1535,9 +1636,19 @@ Main.pipeline = function () {         //this function contains the entire game a
             //autominer
             Main.autominerArray = checkifundef(Main.autominerArray, savedgamefile.save_autominerArray);           //autominer array containing array objects
             Main.autominerArray_typeselected = checkifundef(Main.autominerArray_typeselected, savedgamefile.save_autominerArray_typeselected);       //which autominer currently has focus.  determines what info is shown in menu
+            for (i = 0; i < Main.autominerArray.length; i += 1) {
+                Main.objectauto_miner_definefunctions(Main.autominerArray[i]);
+            }
 
             //upgrade tracker
             Main.upgradesArray = checkifundef(Main.upgradesArray, savedgamefile.save_upgradesArray);            //contains upgrades
+            for (i = 0; i < Main.upgradesArray.length; i += 1) {
+                Main.object_upgrade_definefunctions(Main.upgradesArray[i]);
+            }
+            
+            //refresh the menu to reload everything
+            //Main.changeToMenu(Main.stateMenu);
+            //Main.changeToHUDMenu(Main.HUDstateMenu);
         };
         
         Main.deleteSave = function () {
@@ -1563,13 +1674,7 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.menuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
                 Main.menuTotalObjects = 1;                  //number of objects that need to be loaded for this specific menu
-                //Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
-                //Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
-                //Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
-                //Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
-                
                 Main.menuObjectInitialize(new Main.Object(0, "rock", "StageLeft_1", "rock.png", Main.object_rock_logic));
-                //Main.menuObjectInitialize(new Main.Object(2, "infoPlayer", "information", "no image", Main.information_player_logic, Main.information_player_draw));
                 
                 while (!Main.menuInitialized) {
                     if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
@@ -1580,11 +1685,6 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
             if (statemenu === 1) {                              //if requested to initialize mining menu...
                 Main.menuTotalObjects = 2;                  //number of objects that need to be loaded for this specific menu
-                //Main.menuObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
-                //Main.menuObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
-                //Main.menuObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
-                //Main.menuObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
-                
                 Main.menuObjectInitialize(new Main.Object(0, "refinery_1", "StageLeft_1", "refinery_1.png", Main.object_rock_logic));
                 Main.menuObjectInitialize(new Main.Object(2, "menurefinerycontainer", "StageLeft_1", "no_image", Main.object_menurefinerycontainer_logic, Main.object_menurefinerycontainer_draw));
                 
@@ -1600,8 +1700,9 @@ Main.pipeline = function () {         //this function contains the entire game a
             Main.HUDmenuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
             Main.HUDmenuObjectArray = [];                      //clear the menu object array
             if (statemenu === 0) {                              //if requested to initialize mining menu...
-                Main.HUDmenuTotalObjects = 5;                  //number of objects that need to be loaded for this specific menu
+                Main.HUDmenuTotalObjects = 6;                  //number of objects that need to be loaded for this specific menu
                 Main.HUDObjectInitialize(new Main.Object(0, "button_mines", "AreaSelect", "button_mines.png", Main.object_button_mines_logic));
+                Main.HUDObjectInitialize(new Main.Object(0, "button_abyss", "AreaSelect", "button_abyss.png", Main.object_button_abyss_logic));
                 Main.HUDObjectInitialize(new Main.Object(0, "button_refinery", "AreaSelect", "button_refinery.png", Main.object_button_refinery_logic));
                 Main.HUDObjectInitialize(new Main.Object(2, "oreCounter", "statisticsleft", "no image", Main.object_oreCounter_logic, Main.object_oreCounter_draw));
                 Main.HUDObjectInitialize(new Main.Object(2, "researchMenu", "research", "no_image", Main.researchmenu_logic, Main.researchmenu_draw));
@@ -1683,6 +1784,11 @@ Main.pipeline = function () {         //this function contains the entire game a
     Main.Engine = function () {     //this function listens for input and then processes it to change variables
         var i;
         Main.timerTracker = "engine start";
+        //do loading and saving HERE
+        if (Main.askingtoload === 1) {
+            Main.loadGame();
+            Main.askingtoload = 0;
+        }
         // listen for inputs
                                     //tell objects to listen
         // call functions to change variables based on inputs
@@ -1736,6 +1842,19 @@ Main.pipeline = function () {         //this function contains the entire game a
             }
         }
         
+        //abyss
+        /*
+        if (!Main.player_abyss_initialized) {
+            Main.player_abyss_initialization();
+        } else {
+            if (Main.abyssdiverArray.length < Main.player_abyss_slotcount) {
+                Main.player_abyss_initialized = 0;
+            }
+            for (i = 0; i < Main.abyssdiverArray.length; i += 1) {
+                //do the logic
+            }
+        }*/
+        
         //autominers
         for (i = 0; i < Main.autominerArray.length; i += 1) {       //loop through the autominerArray
             Main.autominerArray[i].logic();     //do the miners logic function
@@ -1745,7 +1864,7 @@ Main.pipeline = function () {         //this function contains the entire game a
         //check upgrades@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         for (i = 0; i < Main.upgradesArray.length; i += 1) {        //loop through upgrades array
             if (Main.upgradesArray[i].available === 0) {
-                console.log("checking ", Main.upgradesArray[i]);
+                //console.log("checking ", Main.upgradesArray[i]);
                 Main.upgradesArray[i].availablecheck();
             }
         }
@@ -1787,11 +1906,6 @@ Main.pipeline = function () {         //this function contains the entire game a
     Define the method for running one frame of the actual game
     ----------------------------------------------------------*/
     Main.Loop = function () {       //this function runs the engine (and draw, if needed) in relation to Timer
-        //do loading and saving HERE
-        if (Main.askingtoload === 1) {
-            Main.loadGame();
-            Main.askingtoload = 0;
-        }
         Main.Engine();              //run engine
         //add time compensation methods if needed
         Main.TickLoop += 1;         //add to tick count
