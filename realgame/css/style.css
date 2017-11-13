@@ -207,7 +207,7 @@ misc elements
 .button_mines {
     position: relative;
     display: inline;
-    margin: 10px;
+    margin: 5px;
     margin-bottom: 0px;
     opacity: 0.1;
     height: 75px;
@@ -220,7 +220,7 @@ misc elements
 .button_refinery {
     position: relative;
     display: inline;
-    margin: 10px;
+    margin: 5px;
     margin-bottom: 0px;
     opacity: 0.1;
     height: 75px;
@@ -232,7 +232,7 @@ misc elements
 .button_abyss {
     position: relative;
     display: inline;
-    margin: 10px;
+    margin: 5px;
     margin-bottom: 0px;
     opacity: 0.1;
     height: 75px;

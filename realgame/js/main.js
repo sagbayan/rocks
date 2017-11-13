@@ -269,10 +269,11 @@ Main.pipeline = function () {         //this function contains the entire game a
         /*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         Object functions: Menus
         ----------------------------------------------------------*/
-        Main.object_popupmenu = function (type, subtype) {
+        Main.object_popupmenu = function (/**/) {
             var docfrag, i, div_wrapper, div_popupmenu, toplevelwrapper;
-            this.type = type;           //string to identify menu type
-            this.subtype = subtype;     //string to identify subtype of menu
+            this.type = arguments[0];           //string to identify menu type
+            this.subtype = arguments[1];     //string to identify subtype of menu
+            //any arguments past 2 and beyond are for other functions
             this.initialized = 0;       //initialized
             toplevelwrapper = document.getElementById("wrapper");
             docfrag = document.createDocumentFragment();
@@ -349,6 +350,38 @@ Main.pipeline = function () {         //this function contains the entire game a
                     }
                 });
                 div_popupmenu.appendChild(canvas_buttonbuy);
+            }
+            if (this.type === "abyssslot") {
+                var objectAbyssDiver, whichpopup,
+                    div_stateneg1, canvas_confirm;
+                objectAbyssDiver = this.subtype;
+                whichpopup = arguments[2];
+                div_popupmenu = document.createElement("div");
+                div_popupmenu.className = "popupmenu_abyss";
+                div_popupmenu.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                });
+                
+                //popup if whichpopup === "reset_diver"
+                div_stateneg1 = document.createElement("div");
+                div_stateneg1.style.display = "none";
+                canvas_confirm = document.createElement("canvas");
+                canvas_confirm.addEventListener("click", function () {  
+                    objectAbyssDiver.reset_to_default();
+                    //this is where you would change the name too
+                    objectAbyssDiver.state = 0;
+                });
+                div_stateneg1.appendChild(canvas_confirm);
+                div_popupmenu.appendChild(div_stateneg1);
+                
+                //popup if whichpopup === "equipment"
+                //popup if whichpopup === "refuel"
+                //popup if whichpopup === "godive"
+                
+                if (whichpopup === "reset_diver") {        //menustate = -1
+                    div_stateneg1.style.display = "block";
+                    //hide the other four popups
+                }
             }
             div_wrapper.appendChild(div_popupmenu);
             docfrag.appendChild(div_wrapper);
@@ -650,18 +683,11 @@ Main.pipeline = function () {         //this function contains the entire game a
         
         //left-side menu buttons
         Main.object_button_mines_logic = function () {
-            var element_button, slidestate;
+            var element_button;
             element_button = document.getElementsByClassName("button_mines");
             for (let i = 0; i < element_button.length; i += 1) {
                 if (!element_button[i].logicInitialized) {
-                    //element_button[i].style.opacity = 0.1;
                     if (!element_button[i].hasListener) {
-                        element_button[i].addEventListener("mouseover", function () {
-                            slidestate = 1;
-                        });
-                        element_button[i].addEventListener("mouseout", function () {
-                            slidestate = 0;
-                        });
                         element_button[i].addEventListener("click", function () {
                             if (Main.stateMenu !== 0) {
                                 Main.changeToMenu(0);
@@ -670,33 +696,16 @@ Main.pipeline = function () {         //this function contains the entire game a
                         element_button[i].hasListener = 1;
                         element_button[i].logicInitialized = 1;
                     }
-                } else {
-                    if (!slidestate) {
-                        if (element_button[i].style.top > -50) {
-                            element_button[i].style.top -= 1;
-                        }
-                    } else {
-                        if (element_button[i].style.top < 50) {
-                            element_button[i].style.top += 1;
-                        }
-                    }
                 }
             }
         };
         
         Main.object_button_refinery_logic = function () {
-            var element_button, slidestate;
+            var element_button;
             element_button = document.getElementsByClassName("button_refinery");
             for (let i = 0; i < element_button.length; i += 1) {
                 if (!element_button[i].logicInitialized) {
-                    slidestate = 0;
                     if (!element_button[i].hasListener) {
-                        element_button[i].addEventListener("mouseover", function () {
-                            slidestate = 1;
-                        });
-                        element_button[i].addEventListener("mouseout", function () {
-                            slidestate = 0;
-                        });
                         element_button[i].addEventListener("click", function () {
                             if (Main.stateMenu !== 1) {
                                 Main.changeToMenu(1);
@@ -704,16 +713,6 @@ Main.pipeline = function () {         //this function contains the entire game a
                         });
                         element_button[i].hasListener = 1;
                         element_button[i].logicInitialized = 1;
-                    }
-                } else {
-                    if (!slidestate) {
-                        if (element_button[i].style.top > -50) {
-                            element_button[i].style.top -= 1;
-                        }
-                    } else {
-                        if (element_button[i].style.top < 50) {
-                            element_button[i].style.top += 1;
-                        }
                     }
                 }
             }
@@ -726,7 +725,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                 if (!element_button[i].logicInitialized) {
                     if (!element_button[i].hasListener) {
                         element_button[i].addEventListener("click", function () {
-                            if (Main.stateMenu !== 1) {
+                            if (Main.stateMenu !== 2) {
                                 Main.changeToMenu(2);
                             }
                         });
@@ -757,31 +756,148 @@ Main.pipeline = function () {         //this function contains the entire game a
         //abyss object
         Main.objectauto_abyssdiver = function () {
             this.slotindex = 0;     //which diver is this
-            this.state = 0;         //menustate for diver slot
+            this.initialized = 0;
+            this.state = -1;         //menustate for diver slot
             this.inventory = [];    //array that holds this diver's inventory.  will be populated with artifacts+count
             this.targetdepth = 0;   //target depth of diver.
             this.currentdepth = 0;  //when on a journey, where is the diver now?
-            this.rate = 0;          //how quickly does the diver dive
+            this.farthestdepth = 0; //what is the furthest this diver has ever gone?
+            this.howmanydives = 0;  //how many successful dives has this diver been on?
+            this.rate = 1;          //how quickly does the diver dive per sec
             this.equipment = [];    //array that holds this diver's equipment.  will be populated with armor type string.
+            this.tickCount = 0;     //tick counter that updates every second
+            this.name = "Charlemagne";  //what is this divers name?
             
             /*
+            this.reset_to_default = function to reset all values to default, except for slotindex and initialized.
             this.logic = function performed every tick.  manages menu, updates diver vars
             */
             Main.objectauto_abyssdiver_definefunctions(this);
         };
         
         Main.objectauto_abyssdiver_definefunctions = function (objectauto_abyssdiver) {
-            if (typeof objectauto_abyssdiver.logic === "undefined") {
+            var e;
+            e = objectauto_abyssdiver;
+            if (typeof e.reset_to_default === "undefined") {
+                e.reset_to_default = function () {
+                    this.state = -1;         //menustate for diver slot
+                    this.inventory = [];    //array that holds this diver's inventory.  will be populated with artifacts+count
+                    this.targetdepth = 0;   //target depth of diver.
+                    this.currentdepth = 0;  //when on a journey, where is the diver now?
+                    this.farthestdepth = 0; //what is the furthest this diver has ever gone?
+                    this.howmanydives = 0;  //how many successful dives has this diver been on?
+                    this.rate = 1;          //how quickly does the diver dive per sec
+                    this.equipment = [];    //array that holds this diver's equipment.  will be populated with armor type string.
+                    this.tickCount = 0;     //tick counter that updates every second
+                    this.name = "Charlemagne";  //what is this divers name?
+                };
+            }
+        };
+        
+        Main.objectauto_abyssdiver_logic = function (objectauto_abyssdiver) {
+            var e;
+            e = objectauto_abyssdiver;
+            if (e.initialized) {
                 //state -1 - no diver in this slot.  Click to build one (brings up popupmenu)
                 //state 0 - menu select to "select equipment" or "refill fuel" or "dive!"
-                //state 1 - select equipment menu
-                //state 2 - refill fuel menu
-                //state 3 - "dive!" menu.  dropdown to select target depth zone
-                //state 4 - "confirm?"
-                //state 5 - diving...
-                //state 6 - dive was successful, tell what it brought back, allow a confirm to return to state 0
-                //state 7 - dive was not successful, tell what was lost, allow a confirm to return to state 0
+                if (e.state === 1) {            //state 1 - diving...
+                    if (e.tickCount % Math.floor(Main.framerate / e.rate) === 0) {      //only execute based on rate
+                        if (e.currentdepth < e.targetdepth) {       //if it is not yet at the destined depth...
+                            //TODO: finish coding this.
+                            e.currentdepth += e.rate;           //continue dive
+                        }
+                        e.tickCount = 0;
+                    } else {
+                        e.tickCount += 1;    
+                    }
+                }
+                //state 2 - dive was successful, tell what it brought back, allow a confirm to return to state 0
+                //state 3 - dive was not successful, tell what was lost, allow a confirm to return to state -1
             }
+            
+        };
+        
+        Main.player_abyss_initialization = function () {
+            var e, newslotindex;
+            if (!Main.player_abyss_initialized) {
+                while (Main.abyssdiverArray.length < Main.player_abyss_slotcount) {
+                    newslotindex = Main.abyssdiverArray.length;
+                    e = new Main.objectauto_abyssdiver();
+                    e.slotindex = newslotindex;
+                    e.initialized = 1;
+                    Main.abyssdiverArray.push(e);
+                }
+                if (Main.abyssdiverArray.length === Main.player_abyss_slotcount) {
+                    Main.player_abyss_initialized = 1;
+                }
+            }
+        };
+        
+        Main.object_menuabysscontainer_logic = function () {
+            var abyssArray, element_menuabysscontainer, i, docfrag, parentdiv, e,
+                div_stateneg1, span_emptydiver1, span_emptydiver2,
+                div_state0, div_diverstats, canvas_equipment, canvas_refuel, canvas_godive, canvas_portrait0,
+                div_state1, div_state2, div_state3;
+            element_menuabysscontainer = document.getElementsByClassName("menuabysscontainer");
+            abyssArray = Main.abyssdiverArray;
+            if (!element_menuabysscontainer[0].logicInitialized) {
+                if (Main.player_abyss_initialized) {
+                    for (let i = 0; i < abyssArray.length; i += 1) {
+                        docfrag = document.createDocumentFragment();
+                        parentdiv = document.createElement("div");
+                        parentdiv.className = "abyssSlotClass";
+                        parentdiv.id = "abyssSlot_" + i;
+                        
+                        //state -1 - empty
+                        div_stateneg1 = document.createElement("div");
+                        div_stateneg1.id = "abyssSlot_div_stateneg1_" + i;
+                        div_stateneg1.style.display = "none";
+                        div_stateneg1.addEventListener("click", function () {
+                            new Main.object_popupmenu("abyssslot", abyssArray[i], "reset_diver");
+                        });
+                        span_emptydiver1 = document.createElement("span");
+                        span_emptydiver1.textContent = "Empty!";
+                        span_emptydiver2 = document.createElement("span");
+                        span_emptydiver2.textContent = "Click to rebuild.";
+                        div_stateneg1.appendChild(span_emptydiver1);
+                        div_stateneg1.appendChild(span_emptydiver2);
+                        parentdiv.appendChild(div_stateneg1);
+                        
+                        //state 0 - stats, equip/refuel/dive options
+                        div_state0 = document.createElement("div");
+                        div_state0.style.display = "none";
+                        div_diverstats = document.createElement("div");
+                        div_state0.appendChild(div_diverstats);
+                        canvas_equipment = document.createElement("canvas");
+                        div_state0.appendChild(canvas_equipment);
+                        canvas_refuel = document.createElement("canvas");
+                        div_state0.appendChild(canvas_refuel);
+                        canvas_godive = document.createElement("canvas");
+                        div_state0.appendChild(canvas_godive);
+                        canvas_portrait0 = document.createElement("canvas");
+                        div_state0.appendChild(canvas_portrait0);
+                        
+                        //state 1 - diving
+                        //state 2 - success
+                        //state 3 - failure
+                        docfrag.appendChild(parentdiv);
+                        element_menuabysscontainer[0].appendChild(docfrag);
+                    }
+                    element_menuabysscontainer[0].logicInitialized = 1;
+                }
+            } else {
+                for (i = 0; i < abyssArray.length; i += 1) {        //loop through all abyss objects
+                    e = abyssArray[i];
+                    div_stateneg1 = document.getElementById("abyssSlot_div_stateneg1_" + i);
+                    if (e.state === -1) {
+                        div_stateneg1.style.display = "block";
+                    }
+                }
+            }
+        };
+        
+        Main.object_menuabysscontainer_draw = function () {
+            
         };
         
         //autominer objects
@@ -826,7 +942,7 @@ Main.pipeline = function () {         //this function contains the entire game a
                     newslotindex = Main.refineryObjectArray.length;  //(works, because it starts at 0)
                     e = new Main.objectauto_refiner();      //create new refiner object
                     e.slotindex = newslotindex;
-                    e.logic = Main.objectauto_refiner_logic(e);
+                    //e.logic = Main.objectauto_refiner_logic(e);
                     e.initialized = 1;
                     if (e.initialized === 1) {                //declare object is initialized
                         Main.refineryObjectArray.push(e);       //push it into refinery object array
@@ -1695,6 +1811,17 @@ Main.pipeline = function () {         //this function contains the entire game a
                     }
                 }
             }
+            if (statemenu === 2) {
+                Main.menuTotalObjects = 1;
+                Main.menuObjectInitialize(new Main.Object(2, "menuabysscontainer", "StageLeft_1", "no_image", Main.object_menuabysscontainer_logic, Main.object_menuabysscontainer_draw));
+                
+                while (!Main.menuInitialized) {
+                    if (Main.menuObjectArray.length === Main.menuTotalObjects) {    //if all necessary objects are loaded into array
+                        console.log("abyss");
+                        Main.menuInitialized = 1;               //declare menu is initialized    
+                    }
+                }
+            }
         };
         Main.HUDbuildMenu = function (statemenu) {
             Main.HUDmenuTotalObjects = 0;                       //total amount of objects needed to be loaded on a given menu
@@ -1758,10 +1885,13 @@ Main.pipeline = function () {         //this function contains the entire game a
         Main.drawBackgrounds = function () {
             var canvas_stageleft, ctx_stageleft, image_stageleft;
             canvas_stageleft = document.getElementsByClassName("StageLeftCanvas")[0];
-            if (Main.stateMenu === 0) {
+            if (Main.stateMenu === 0) {     //background image for mining
                 image_stageleft = getImage(Main.Preloader, "background_mines.png");
             }
-            if (Main.stateMenu === 1) {
+            if (Main.stateMenu === 1) {     //background image for refinery
+                image_stageleft = getImage(Main.Preloader, "background_mines.png");
+            }
+            if (Main.stateMenu === 2) {     //background image for abyss
                 image_stageleft = getImage(Main.Preloader, "background_mines.png");
             }
             ctx_stageleft = canvas_stageleft.getContext("2d");
@@ -1823,6 +1953,15 @@ Main.pipeline = function () {         //this function contains the entire game a
                     }
                 }
             }
+            if (Main.stateMenu === 2) {         //game is on the abyss
+                if (!Main.menuInitialized) {            //if menu is not initialized, initialize it
+                    Main.buildMenu(2);
+                } else {                                //if it is, then perform the logic function on all objects
+                    for (i = 0; i < Main.menuObjectArray.length; i += 1) {
+                        Main.menuObjectArray[i].logic();
+                    }
+                }
+            }
         }
         
         //update auto units@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1843,7 +1982,6 @@ Main.pipeline = function () {         //this function contains the entire game a
         }
         
         //abyss
-        /*
         if (!Main.player_abyss_initialized) {
             Main.player_abyss_initialization();
         } else {
@@ -1851,9 +1989,9 @@ Main.pipeline = function () {         //this function contains the entire game a
                 Main.player_abyss_initialized = 0;
             }
             for (i = 0; i < Main.abyssdiverArray.length; i += 1) {
-                //do the logic
+                Main.objectauto_abyssdiver_logic(Main.abyssdiverArray[i]);
             }
-        }*/
+        }
         
         //autominers
         for (i = 0; i < Main.autominerArray.length; i += 1) {       //loop through the autominerArray
