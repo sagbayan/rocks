@@ -1,0 +1,63 @@
+Game.start()			//
+	define environment, version, css, date variables
+
+	->define Game.initialize()
+		->define variables
+			Timers
+				timer for game logic
+				timer for rendering
+				timing for game loop
+				define FPS
+			Actual game variables to be displayed by elements in HTML
+				ores
+				miners
+				cursors
+				level
+				etc
+			Variables related to rendering
+				backgrounds
+				images
+				sounds
+				etc.
+				preferences
+		->give variables values
+		->define functions
+			high level
+				save/load functions
+				ascension
+			low level
+				mining tab functions
+				abyss tab functions
+				buildings
+				upgrades
+				achievements
+				buffs
+			graphics and shit
+				visual effects
+			cheats
+		->define game as ready
+		->CALL game loop (this will loop forever)
+		->CALL draw function (this will also loop forever)
+	->DEFINE game.logic()
+		->check for ascension
+		->check for player inputs
+		->update variables based on inputs
+		->reset inputs
+		->add 1 tick to game logic timer
+	->DEFINE game.draw()
+		->render one frame of the game
+		->add 1 tick to rendering timer
+	->DEFINE Game.loop()
+		->ref timer mechanism declare start
+			timers begin
+		->ref timer track response to start
+		->ref timer declare logic
+		->compensate lag
+		->call logic()
+		->ref timer declare logic is done
+		->ref timer declare draw
+		->call draw()
+		->ref timer declare draw done
+		->reset ref timer
+		->add 1 tick to game loop timer
+		->set timeout of the loop() function to the length of 1 game frame in real life (1000ms/fps)

@@ -1,0 +1,436 @@
+@import url('https://fonts.googleapis.com/css?family=Rajdhani');
+/*font-family: 'Rajdhani', sans-serif;*/
+::-moz-selection {
+    background:transparent;
+}
+::selection {
+    background:transparent;
+}
+
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+div classes
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.Wrapper {
+    display: block;
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    overflow: hidden;
+    left: 0px;
+	top: 0px;
+    z-index: 0;
+    max-height: 768px;
+    max-width: 1366px;
+}
+
+.StageLeft {                    /*inside div, class=wrapper*/
+    background-color: rgba(200, 200, 200, 1);  /*dark gray*/
+    position: absolute;
+    text-align: center;
+	z-index: -10;
+    left: 0px;
+	top: 0px;
+    right: 260px;
+    height: 101%;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.StageLeftCanvas {
+    height: 768px;
+    width: calc(1366px + 260px/2);
+    z-index: inherit;
+    position: absolute;
+    top = 0px;
+    left: calc((100% - 1366px)/2);
+    border: 1px solid #000000;
+}
+.test {
+    position: absolute;
+    height: 200px;
+    width: 600px;
+    left: 0;
+    top: 1300px;
+    border: 1px solid #000000;
+}
+
+.StageRight {                   /*inside div, class=wrapper*/
+    background-color: #C0C0C0;  /*light gray*/
+    position: absolute;
+    overflow: hidden;
+    z-index: 15;
+	right: 0px;
+	top: 0px;
+	width: 260px;
+    height: 100%;
+}
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+information
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.Information {                   /*inside div, stageLeft or stageRight*/
+    background-color: #00ff00;
+    z-index: 20;
+    text-align: center;
+    margin: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 350px;
+    width: 240px;
+}
+#information_canvas {
+    position: absolute;
+    width: inherit;
+    height: inherit;
+}
+#infoPlayer_span_playertier, #infoPlayer_span_playerstrength {
+    position: relative;
+    padding: 10px;
+    width: 50%;
+}
+.info_spandata {
+    position: relative;
+    padding: 10px;
+    width: 50%;
+}
+.info_buttonupgrade {
+    padding-left: 5px;
+}
+#infoPlayer_div_infowrapper_select {
+    height: 150px;
+    width: 220px;
+}
+#infoPlayer_div_infowrapperautoblank, #infoPlayer_canvas_autoblankselect_tier0 {
+    margin: auto;
+    width: 220px;
+}
+
+.Statistics {                   /*inside div, stageLeft or stageRight*/
+    background-color: #FF0000;  /*red*/
+    z-index: 20;
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    height: 75px;
+    width: 260px;
+}
+
+.StatisticsCanvas {
+    position: relative;
+    height: inherit;
+    width: inherit;
+}
+
+.StatisticsDetail {                   /*inside div, stageLeft or stageRight*/
+    background-color: #FF0000;  /*red*/
+    z-index: 20;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 300px;
+    width: 240px
+}
+
+.Research {
+    background-color: #000080;  /*blue*/
+    z-index: 20;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 268px;
+    width: 240px;
+}
+#researchMenu_div_researchmenu_wrapper, #researchMenu_div_researchmenuAbyss_wrapper {
+    text-align: center;
+}
+
+.MenuOption {
+    background-color: #0000FF;  /*lighter blue*/
+    z-index: 30;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 75px;
+    width: 220px;
+}
+
+/* generic canvas things */
+
+
+.StageRightCanvas {
+    height: 100%;
+    width: 100%;
+    z-index: inherit;
+    position: absolute;
+    border: 1px solid #000000;
+}
+
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+pop up menu
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+#popupmenu_wrapper {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+    text-align: center;
+    height: 100%;
+    width: 100%;
+}
+.popupmenu_upgrade {
+    position: relative;
+    margin: auto;
+    width: 500px;
+    background-color: antiquewhite;
+}
+.popupmenu_abyss_resetdiver {
+    position: relative;
+    margin: auto;
+    height: 200px;
+    width: 500px;
+    background-color: antiquewhite;
+}
+.popupmenu_abyss_selectequipment {
+    position: relative;
+    margin: auto;
+    width: 500px;
+    background-color: antiquewhite;
+}
+.popupmenu_abyss_refuel {
+    position: relative;
+    margin: auto;
+    width: 500px;
+    background-color: antiquewhite;
+}
+.popupmenu_researchabyss_buildequipment {
+    position: relative;
+    margin: auto;
+    height: 200px;
+    width: 500px;
+    background-color: antiquewhite;
+}
+
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+abyss
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.menuabysscontainer {
+    position: relative;
+    margin: auto;
+    top: 180px;
+    width: 80%;
+    height: 300px;
+    border: 1px solid #000000;
+}
+
+.abyssSlot_div_stateneg1 {
+    width: inherit;
+    height: inherit;
+}
+
+.abyssSlotClass {
+    background-color: antiquewhite;
+    width: 300px;
+    height: 550px;
+}
+#researchMenu_canvas_researchmenuAbyss_buildequipment, #researchMenu_canvas_researchmenuAbyss_upgradeequipment {
+    margin: 10px;
+}
+
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+misc elements
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.text_title1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 40;
+}
+.text_paragraph1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20;
+}
+.rock {
+    position: relative;
+    margin: auto;
+    margin-top: 284px;
+    height: 200px;
+    width: 200px;
+    border: 1px solid #000000;
+}
+
+.button_mines {
+    position: relative;
+    display: inline;
+    margin: 5px;
+    margin-bottom: 0px;
+    opacity: 0.1;
+    height: 75px;
+    width: 75px;
+}
+.button_mines:hover {
+    opacity: 1;
+}
+
+.button_refinery {
+    position: relative;
+    display: inline;
+    margin: 5px;
+    margin-bottom: 0px;
+    opacity: 0.1;
+    height: 75px;
+    width: 75px;
+}
+.button_refinery:hover {
+    opacity: 1;
+}
+.button_abyss {
+    position: relative;
+    display: inline;
+    margin: 5px;
+    margin-bottom: 0px;
+    opacity: 0.1;
+    height: 75px;
+    width: 75px;
+}
+.button_abyss:hover {
+    opacity: 1;
+}
+.button_load {
+    position: fixed;
+    display: inline;
+    opacity: 0.5;
+    height: 75px;
+    width: 75px;
+    left: 10px;
+    top: 200px;
+}
+.button_save {
+    position: fixed;
+    display: inline;
+    opacity: 0.5;
+    height: 75px;
+    width: 75px;
+    left: 10px;
+    top: 285px;
+}
+
+.refinery_1 {
+    position: relative;
+    margin: auto;
+    height: 300px;
+    width: 400px;
+    border: 1px solid #000000;
+}
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+generic text
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.span_title {
+    margin: auto;
+    font-family: 'Rajdhani', sans-serif;
+    color: white;
+    font-size: 20;
+    font-weight: bold;
+}
+.info_spandata {
+    font-family: 'Rajdhani', sans-serif;
+    color: black;
+    font-size: 14;
+    font-weight: bold;
+}
+
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ore counter 
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.oreCounter {
+    text-align: center;
+    justify-content: space-between;
+    width: inherit;
+    height: inherit;
+}
+#oreCounter_spanore {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 40;
+}
+#oreCounter_divtier1_span_title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 30;
+}
+#oreCounter_divtier1 {
+    background-color: aquamarine;
+    border: 1px solid #000000;
+}
+.oreCounter_divtier_orenumbers, .oreCounter_divtier_refnumbers {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20;
+}
+.oreCounter_divtier1_canvasicon {
+    display: inline-block;
+}
+
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+refinery slots
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.menurefinerycontainer {
+    position: relative;
+    margin: auto;
+    top: 10px;
+    width: 80%;
+    height: 300px;
+    border: 1px solid #000000;
+}
+
+.refineryslotClass {
+    background-color: aqua;
+    position: absolute;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    width: 200px;
+    height: 150px
+}
+
+.refineryslot_div0, .refineryslot_div1, .refineryslot_div3 {
+    width: 100%;
+    height 100%;
+}
+
+.refineryslot_cancelbutton {
+    display: inherit;
+    position: absolute;
+    height: 15px;
+    width: 15px;
+    top: 0px;
+    right: 0px;
+}
+
+.refineryslot_div1_imginput_ore {
+    display: inherit;
+    position: relative;
+    height: 50px;
+    width: 50px;
+}
+
+.refineryslot_div2_imgore {
+    display: inherit;
+    position: static;
+    height: 50px;
+    width: 50px;
+}
+
+.refineryslot_div2_imgall {
+    display: inherit;
+    position: static;
+    height: 25px;
+    width: 50px;
+}
+
+.refineryslot_div2_input {
+    
+}
+.refineryslot_div2_imgall {
+    
+}
+.refineryslot_div3_span1, .refineryslot_div3_span2 {
+    display: block;
+}
