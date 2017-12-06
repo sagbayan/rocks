@@ -1,0 +1,24 @@
+/*@import url('https://fonts.googleapis.com/css?family=Rajdhani');*/
+/*font-family: 'Rajdhani', sans-serif;*/
+::-moz-selection {
+    background:transparent;
+}
+::selection {
+    background:transparent;
+}
+
+/*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+div classes
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/
+.Wrapper {
+    display: block;
+    height: 100%;
+    width: 100%;
+    position: fixed;
+    overflow: hidden;
+    left: 0px;
+	top: 0px;
+    z-index: 0;
+    max-height: 768px;
+    max-width: 1366px;
+}
