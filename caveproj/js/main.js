@@ -188,7 +188,7 @@ main.pipeline = function () {
                     e1.initialize(fLogic, fRender);
                 }
                 if (arguments.length === 4) {
-                    e1 = new main.Object(parentName, className, fLogic, fRender);     //create the new object
+                    e1 = new main.Object(parentName, className, fLogic, fRender);     //create the new object with logic and render
                     fLogic = arguments[2];
                     fRender = arguments[3];
                     e1.initialize(fLogic, fRender);
@@ -229,9 +229,9 @@ main.pipeline = function () {
                 }
                 main.menu.loaded = false;
             },
-            changeToMenu: function (whichmenu) {
+            //changeToMenu: function (whichmenu) {
                 //TODO define change menu and add to logic
-            }
+            //}
         };
         
         //@@@@@@@@@@@ top-level game objects
@@ -254,32 +254,150 @@ main.pipeline = function () {
         };
         
         //@@@@@@@@@@@ lower-level game objects
+        //debug related
+        
         //cave screen
         main.cave = {
             initialized: false,
             mapArray: [],
             mapWidth: 1000,     //size of map array.  map is square, so size is width^2
-            cameraWidth: 400,   //viewport of camera
-            cameraHeight: 400,
+            cameraWidth: 1000,   //viewport of camera
+            cameraHeight: 1000,
+            cameraX: 0,         //location of camera
+            cameraY: 0,
+            cameraXMax: 0,      //will be recalculated in initialize()
+            cameraYMax: 0,
+            startX: 0,          //start location (top of cave) will be calculated
+            startY: 0,
             
             initializeMap: function () {
-                var i, j, mapWidth;
+                var mapWidth, cameraWidth, cameraHeight;
                 mapWidth = main.cave.mapWidth;
-                //populate array with 0
-                for (i = 0; i < mapWidth; i += 1) {
-                    for (j = 0; j < mapWidth; j += 1) {
-                        main.cave.mapArray.push(0);     //populate with 0 (wall)
+                //cameraWidth = main.cave.cameraWidth;
+                //cameraHeight = main.cave.cameraHeight;
+                //create array of mapWidth x mapWidth, initialize with 0 using array.fill method
+                main.cave.mapArray = Array.from({length: mapWidth}, () => Array(mapWidth).fill(0));
+                
+                //mine it out
+                //TODO write clever cellular automata function here to make a cave by inserting 1 (no wall) into array
+                var i, j, minerHealth, minerX, minerY, minerXStart, minerYStart, minerLoops, minerSize, mineFunction;
+                minerHealth = 10000;   //how many blocks it will attempt to mine
+                minerSize = 2;      //size of block to mine out
+                minerXStart = 500;  //starting location on map for miners
+                minerYStart = 500;
+                minerLoops = 3;     //how many miners to fire
+                mineFunction = function (X, Y) {    //function to "mine" out the map array, based on miner size
+                    var z, w;
+                    for (z = 0; z < (2 * minerSize); z += 1) {
+                        for (w = 0; w < (2 * minerSize); w += 1) {
+                            main.cave.mapArray[X - minerSize + z][Y - minerSize + w] = 1;
+                        }
+                    }
+                    main.cave.mapArray[X][Y] = 1;
+                };
+                
+                for (j = 0; j < minerLoops; j += 1) {
+                    minerX = minerXStart;   //place miners initially at the start location
+                    minerY = minerYStart;
+                    for (i = 0; i < minerHealth; i += 1) {
+                        var randomX = Math.round(Math.random() * (minerSize * 2)) - minerSize,  //roll neg or pos, in range of minerSize
+                            randomY = Math.round(Math.random() * (minerSize * 2)) - minerSize;  //roll neg or pos, in range of minerSize
+                        minerX = minerX + randomX;  //move in X
+                        if (minerX > mapWidth || minerX < 0) {    //if it hits the edge of map, quit
+                            break;
+                        } else {
+                            //main.cave.mapArray[minerX][minerY] = 1; //mine a wall
+                            mineFunction(minerX, minerY);
+                        }
+                        minerY = minerY + randomY;  //move in Y
+                        if (minerY > mapWidth || minerY < 0) {    //if it hits the edge of map, quit
+                            break;
+                        } else {
+                            //main.cave.mapArray[minerX][minerY] = 1; //mine a wall
+                            mineFunction(minerX, minerY);
+                        }
                     }
                 }
-                //mine it out
-                //TODO write clever cellular automata function here to make a cave
-                for (i = 0; i < 200; i += 1) {
-                    main.cave.mapArray[200][i] = 1;
+                //TODO: crop the cave array
+                //find left-most cell
+                var leftX, rightX, topY, botY, breakCheck;
+                breakCheck = false;
+                for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
+                    for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
+                        if (main.cave.mapArray[i][j] !== 0) {
+                            leftX = i;
+                            breakCheck = true;
+                            break;
+                        }
+                    }
+                    if (breakCheck) {
+                        break;
+                    }
                 }
+                //find right-most cell
+                breakCheck = false;
+                for (i = mapWidth - 1; i > -1; i -= 1) {     //start from right, go to left
+                    for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
+                        if (main.cave.mapArray[i][j] !== 0) {
+                            rightX = i;
+                            breakCheck = true;
+                            break;
+                        }
+                    }
+                    if (breakCheck) {
+                        break;
+                    }
+                }
+                //find top-most cell
+                breakCheck = false;
+                for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
+                    for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
+                        if (main.cave.mapArray[i][j] !== 0) {
+                            topY = j;
+                            main.cave.startX = i;
+                            main.cave.startY = j;
+                            breakCheck = true;
+                            break;
+                        }
+                    }
+                    if (breakCheck) {
+                        break;
+                    }
+                }
+                //find bot-most cell
+                breakCheck = false;
+                for (j = mapWidth - 1; j > -1; j -= 1) {     //start from bottom, go to top
+                    for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
+                        if (main.cave.mapArray[i][j] !== 0) {
+                            botY = j;
+                            breakCheck = true;
+                            break;
+                        }
+                    }
+                    if (breakCheck) {
+                        break;
+                    }
+                }
+                //crop the array using left/right/top/bot values
+                var croppedArray;
+                croppedArray = main.cave.mapArray.slice(leftX, rightX);
+                for (i = 0; i < (croppedArray.length); i += 1) {
+                    croppedArray[i] = croppedArray[i].slice(topY, botY);
+                }
+                //TODO replace the map array with the cropped one
+                main.cave.mapArray = croppedArray;
+                console.log(croppedArray);
+                console.log("map done");
             },
             
             initialize: function () {
-                main.cave.initializeMap();      //create the map to reference
+                main.cave.cameraXMax = main.cave.mapWidth - main.cave.cameraWidth;  //define xmax, ymax based on width
+                main.cave.cameraYMax = main.cave.mapWidth - main.cave.cameraHeight;
+                
+                main.cave.initializeMap();      //create the map array to reference
+                
+                //main.cave.cameraX = main.cave.startX - 0.5 * main.cave.cameraWidth;
+                //main.cave.cameraY = main.cave.startY - 0.5 * main.cave.cameraHeight;
             }
         };
         
@@ -287,10 +405,18 @@ main.pipeline = function () {
             var element_cavescreen = document.getElementsByClassName("cavescreen")[0];
             if (!element_cavescreen.logicInitialized) {     //attaches a initialized? boolean to the element for initialization purposes
                 var canvas;
+                //initialize the cave
+                main.cave.initialize();
+                
+                //add event listeners to control the camera
+                //TODO add arrow key camera control
+                
+                //create canvas element
                 canvas = document.createElement("canvas");
                 canvas.id = "cavescreenCanvas";
-                canvas.width = getImage("test_1.png").width;
-                canvas.height = getImage("test_1.png").height;
+                canvas.width = 1000;
+                canvas.height = 1000;
+                canvas.style.border = '1px solid #F00';
                 element_cavescreen.appendChild(canvas);
                 
                 element_cavescreen.logicInitialized = true;
@@ -298,12 +424,76 @@ main.pipeline = function () {
         };
         
         main.objectCavescreenRender = function () {
-            var element_cavescreen = document.getElementsByClassName("cavescreen")[0];
+            var element_cavescreen = document.getElementsByClassName("cavescreen")[0],
+                canvas, imageData, context, pixelIndex,
+                red, green, blue, alpha,            //color values for imageData
+                cellX, cellY,   //X Y location on imageData
+                cameraX, cameraY, cameraWidth, cameraHeight,    //camera location on map array of cave
+                mapCheckCell, checkX, checkY, checkOOB;           //value of the corresponding cell in the map array
             if (element_cavescreen.logicInitialized) {
-                var canvas, image;
-                canvas = document.getElementById("cavescreenCanvas");
-                image = getImage("test_1.png");
-                canvas.getContext("2d").drawImage(image, 0, 0);
+                if (!element_cavescreen.renderInitialized) {
+                    canvas = document.getElementById("cavescreenCanvas");
+                    context = canvas.getContext("2d");
+                    imageData = context.createImageData(main.cave.cameraWidth, main.cave.cameraHeight);
+                    main.cave.canvas = canvas;
+                    main.cave.context = context;
+                    main.cave.imagedata = imageData;
+                    
+                    element_cavescreen.renderInitialized = true;
+                } else {
+                    canvas = main.cave.canvas;
+                    context = main.cave.context;
+                    imageData = main.cave.imagedata;
+                    //modify imageData based on cave camera
+                    cameraX = main.cave.cameraX;
+                    cameraY = main.cave.cameraY;
+                    cameraWidth = main.cave.cameraWidth;
+                    cameraHeight = main.cave.cameraHeight;
+                    //console.log("weee ", context, imageData);
+                    for (cellX = 0; cellX < cameraWidth; cellX += 1) {      //from left to right, for width of camera
+                        for (cellY = 0; cellY < cameraHeight; cellY += 1) {     //from top to bottom, for height of camera
+                            pixelIndex = (cellY * cameraWidth + cellX) * 4;       //formula for getting pixel index in imagedata
+                            checkX = cameraX + cellX;       //location in map array to check X
+                            checkY = cameraY + cellY;       //location in map array to check Y
+                            if (checkX > main.cave.mapArray.length - 1 || checkY > main.cave.mapArray[0].length - 1) {  //if it's out of bounds, flag checkOOB
+                                checkOOB = true;
+                            } else {
+                                checkOOB = false;
+                            }
+                            if (checkOOB) {
+                                mapCheckCell = -1;
+                            } else {
+                                mapCheckCell = main.cave.mapArray[checkX][checkY];    //check the map array cell for each camera pixel
+                                //mapCheckCell = main.cave.croppedmapArray[checkX][checkY]
+                            }
+                            if (mapCheckCell === -1) {   //if cell is OOB
+                                red = 240;
+                                green = 240;
+                                blue = 240;
+                                alpha = 255;
+                            }
+                            if (mapCheckCell === 0) {   //if cell is a wall
+                                red = 255;
+                                green = 255;
+                                blue = 255;
+                                alpha = 255;
+                            }
+                            if (mapCheckCell === 1) {   //if cell is empty
+                                red = 0;
+                                green = 0;
+                                blue = 0;
+                                alpha = 255;
+                            }
+                            //edit the imagedata based on cell data
+                            imageData.data[pixelIndex] = red;
+                            imageData.data[pixelIndex + 1] = green;
+                            imageData.data[pixelIndex + 2] = blue;
+                            imageData.data[pixelIndex + 3] = alpha;
+                        }
+                    }
+                    //draw it on canvas
+                    context.putImageData(imageData, 0, 0);
+                }
             }
         };
         
@@ -361,6 +551,7 @@ main.pipeline = function () {
         3. call for renderframe to repeat this function call (starts a loop)
         */
         var i;
+        window.requestAnimationFrame(main.render);
         if (main.gameTickTracker === "logic done") {    //only perform render if logic is done! (logic done is a callback)
             //menu render
             if (main.menu.loaded) {     //only render if menu objects are loaded
@@ -370,7 +561,6 @@ main.pipeline = function () {
             }
             main.gameTickRender += 1;
         }
-        window.requestAnimationFrame(main.render);
     };
     //endregion
     
