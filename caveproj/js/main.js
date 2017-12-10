@@ -201,8 +201,9 @@ main.pipeline = function () {
             buildMenu: function (whichmenu) {   //function to build menu (after it is empty)
                 main.menu.objectArray = [];     //empty array
                 if (whichmenu === "cave") {
-                    main.menu.countObjectsNeeded = 1;     //define how many objects are needed in the menu
+                    main.menu.countObjectsNeeded = 2;     //define how many objects are needed in the menu
                     main.menu.initializeObject("wrapper", "cavescreen", main.objectCavescreenLogic, main.objectCavescreenRender);
+                    main.menu.initializeObject("wrapper", "gamescreen", main.objectGamescreenLogic, main.objectGamescreenRender);
                 }
                 
                 while (!main.menu.loaded) {
@@ -269,136 +270,291 @@ main.pipeline = function () {
             cameraYMax: 0,
             startX: 0,          //start location (top of cave) will be calculated
             startY: 0,
+            tilemapTileSize: 50,
+            tilemapFilename: "tilemap_cave.png",
+            showMap: false,     //flag that reveals map
             
             initializeMap: function () {
-                var mapWidth, cameraWidth, cameraHeight;
+                /*
+                1. create empty map
+                2. mine it out, and crop it
+                3. use flood fill algo to check how big it is
+                4. if big enough, let it go, otherwise retry
+                */
+                var i, j, mapWidth, tilecameraWidth, tilecameraHeight, cameraWidth, cameraHeight, createNewMap, abortFlag;
                 mapWidth = main.cave.mapWidth;
-                //cameraWidth = main.cave.cameraWidth;
-                //cameraHeight = main.cave.cameraHeight;
+                cameraWidth = main.cave.cameraWidth;      //TODO define camera control and then change this back to the main.cave variable
+                cameraHeight = main.cave.cameraHeight;
+                tilecameraWidth = cameraWidth / main.cave.tilemapTileSize;       //width of camera in tiles.  50
+                tilecameraHeight = cameraHeight / main.cave.tilemapTileSize;      //height of camera in tiles.  50
+                abortFlag = false;      //catches errors TODO: find out what is actually causing this issue
+                
                 //create array of mapWidth x mapWidth, initialize with 0 using array.fill method
                 main.cave.mapArray = Array.from({length: mapWidth}, () => Array(mapWidth).fill(0));
                 
                 //mine it out
                 //TODO write clever cellular automata function here to make a cave by inserting 1 (no wall) into array
-                var i, j, minerHealth, minerX, minerY, minerXStart, minerYStart, minerLoops, minerSize, mineFunction;
-                minerHealth = 10000;   //how many blocks it will attempt to mine
-                minerSize = 2;      //size of block to mine out
-                minerXStart = 500;  //starting location on map for miners
-                minerYStart = 500;
-                minerLoops = 3;     //how many miners to fire
-                mineFunction = function (X, Y) {    //function to "mine" out the map array, based on miner size
-                    var z, w;
-                    for (z = 0; z < (2 * minerSize); z += 1) {
-                        for (w = 0; w < (2 * minerSize); w += 1) {
-                            main.cave.mapArray[X - minerSize + z][Y - minerSize + w] = 1;
+                createNewMap = function () {
+                    var i, j, minerHealth, minerX, minerY, minerXStart, minerYStart, minerLoops, minerSize, mineFunction;
+                    minerHealth = 20000;   //how many blocks it will attempt to mine
+                    minerSize = 3;      //size of block to mine out
+                    minerXStart = 500;  //starting location on map for miners
+                    minerYStart = 500;
+                    minerLoops = 2;     //how many miners will mine
+                    mineFunction = function (X, Y) {    //function to "mine" out the map array, based on miner size
+                        var z, w, mX, mY;
+                        for (z = 0; z < (2 * minerSize); z += 1) {
+                            for (w = 0; w < (2 * minerSize); w += 1) {
+                                mX = X - minerSize + z;
+                                mY = Y - minerSize + w;
+                                /*if (main.cave.mapArray[X - minerSize + z] === undefined) {
+                                    console.log("we fucked up", X - minerSize + z, main.cave.mapArray[X - minerSize + z]);
+                                    console.log(X, Y);
+                                    break;
+                                }*/
+                                if (main.cave.mapArray !== undefined) {
+                                    main.cave.mapArray[mX][mY] = 1;
+                                }
+                            }
+                        }
+                        main.cave.mapArray[X][Y] = 1;
+                    };
+
+                    for (j = 0; j < minerLoops; j += 1) {
+                        minerX = minerXStart;   //place miners initially at the start location
+                        minerY = minerYStart;
+                        for (i = 0; i < minerHealth; i += 1) {
+                            var randomX = Math.round(Math.random() * (minerSize * 2)) - (minerSize),  //roll neg or pos, in range of minerSize
+                                randomY = Math.round(Math.random() * (minerSize * 2)) - (minerSize);  //roll neg or pos, in range of minerSize
+                            minerX = minerX + randomX;  //move in X
+                            if (minerX >= (mapWidth + (0.5 * tilecameraWidth)) || minerX <= (0 + (0.5 * tilecameraWidth))) {    //if it hits the edge of map, quit
+                                break;
+                            } else {
+                                //main.cave.mapArray[minerX][minerY] = 1; //mine a wall
+                                if (minerX >= mapWidth - minerSize) {   //if it somehow has gone too far, reset location
+                                    minerX = minerXStart;
+                                }
+                                mineFunction(minerX, minerY);
+                            }
+                            minerY = minerY + randomY;  //move in Y
+                            if (minerY >= (mapWidth + (0.5 * tilecameraHeight)) || minerY <= (0 + (0.5 * tilecameraHeight))) {    //if it hits the edge of map, quit
+                                break;
+                            } else {
+                                if (minerY >= mapWidth - minerSize) {   //if it somehow has gone too far, reset location
+                                    minerY = minerYStart;
+                                }
+                                mineFunction(minerX, minerY);
+                            }
                         }
                     }
-                    main.cave.mapArray[X][Y] = 1;
+                    //TODO: crop the cave array
+                    //find left-most cell
+                    var leftX, rightX, topY, botY, breakCheck;
+                    breakCheck = false;
+                    for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
+                        for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
+                            if (main.cave.mapArray[i][j] !== 0) {
+                                leftX = i - tilecameraWidth - 1;        //set cropping boundary to 1 tile beyond the camera view limit
+                                breakCheck = true;
+                                break;
+                            }
+                        }
+                        if (breakCheck) {
+                            break;
+                        }
+                    }
+                    //find right-most cell
+                    breakCheck = false;
+                    for (i = mapWidth - 1; i > -1; i -= 1) {     //start from right, go to left
+                        for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
+                            if (main.cave.mapArray[i][j] !== 0) {
+                                rightX = i + tilecameraWidth + 1;
+                                breakCheck = true;
+                                break;
+                            }
+                        }
+                        if (breakCheck) {
+                            break;
+                        }
+                    }
+                    //find top-most cell
+                    breakCheck = false;
+                    for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
+                        for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
+                            if (main.cave.mapArray[i][j] !== 0) {
+                                topY = j - tilecameraHeight - 1;
+                                breakCheck = true;
+                                break;
+                            }
+                        }
+                        if (breakCheck) {
+                            break;
+                        }
+                    }
+                    //find bot-most cell
+                    breakCheck = false;
+                    for (j = mapWidth - 1; j > -1; j -= 1) {     //start from bottom, go to top
+                        for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
+                            if (main.cave.mapArray[i][j] !== 0) {
+                                botY = j + tilecameraHeight + 1;
+                                breakCheck = true;
+                                break;
+                            }
+                        }
+                        if (breakCheck) {
+                            break;
+                        }
+                    }
+                    //crop the array using left/right/top/bot values
+                    var croppedArray;
+                    croppedArray = main.cave.mapArray.slice(leftX, rightX);
+                    for (i = 0; i < (croppedArray.length); i += 1) {
+                        croppedArray[i] = croppedArray[i].slice(topY, botY);
+                    }
+                    //find the starting point of the cropped array
+                    breakCheck = false;
+                    if (croppedArray[0] === undefined || croppedArray[0].length === 0) {    //check if the array was cropped correctly
+                        console.log("ABORT! ABORT!");   //if it's not, abandon ship TODO figure out why croppedArray[0].length === 0 sometimes
+                        abortFlag = true;
+                        return;
+                    }
+                    for (j = 0; j < croppedArray[0].length; j += 1) {     //start from top, go to bottom
+                        for (i = 0; i < croppedArray.length; i += 1) {     //start from left, go to right
+                            if (croppedArray[i][j] !== 0) {
+                                topY = j - tilecameraHeight - 1;
+                                main.cave.startX = i;
+                                main.cave.startY = j;
+                                breakCheck = true;
+                                break;
+                            }
+                        }
+                        if (breakCheck) {
+                            break;
+                        }
+                    }
+                    return croppedArray;    //return the cropped array to be checked by floodfill function
+                };       //define how the map is populated with space (create the cave), then crop the map
+                var mapArrayCropped = createNewMap();   //perform the map function, then create a reference to the new map
+                if (abortFlag === true) {   //catch the abort flag, if it's true
+                    return;
+                }
+                //TODO clean up the map
+                var cleanMap, cleanLoop;
+                cleanLoop = 10;  //how many times to run the cleaning function
+                cleanMap = function (checkThisArray) {
+                    var i, j, k, l,
+                        counterLimit = 5,
+                        arrayToClean = JSON.parse(JSON.stringify(checkThisArray));
+                    for (i = 1; i < checkThisArray.length - 1; i += 1) {
+                        for (j = 1; j < checkThisArray[0].length - 1; j += 1) {     //for each cell in the array to check...
+                            var counter = 0;
+                            //check its 8 neighboring squares in the array to check
+                            //  A   B   C
+                            //  D   ?   E
+                            //  F   G   H
+                            if (checkThisArray[i][j] === 0) {   //if cell is a wall...
+                                for (k = -1; k < 2; k += 1) {
+                                    for (l = -1; l < 2; l += 1) {   //loop through 8 cells surrounding it
+                                        if (k === 0 && l === 0) {   //skip the cell itself
+                                            continue;
+                                        } else {
+                                            if (checkThisArray[i + k][j + l] !== 0) {   //count how many of its 8 neighbors are not walls
+                                                counter += 1;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (counter >= counterLimit) { //if atleast 5 of its neighbors are empty, set itself to empty
+                                    arrayToClean[i][j] = 1;
+                                }
+                            }
+                        }
+                    }
+                    return arrayToClean;
                 };
+                for (i = 0; i < cleanLoop; i += 1) {    //
+                    mapArrayCropped = cleanMap(mapArrayCropped);
+                }
                 
-                for (j = 0; j < minerLoops; j += 1) {
-                    minerX = minerXStart;   //place miners initially at the start location
-                    minerY = minerYStart;
-                    for (i = 0; i < minerHealth; i += 1) {
-                        var randomX = Math.round(Math.random() * (minerSize * 2)) - minerSize,  //roll neg or pos, in range of minerSize
-                            randomY = Math.round(Math.random() * (minerSize * 2)) - minerSize;  //roll neg or pos, in range of minerSize
-                        minerX = minerX + randomX;  //move in X
-                        if (minerX > mapWidth || minerX < 0) {    //if it hits the edge of map, quit
-                            break;
-                        } else {
-                            //main.cave.mapArray[minerX][minerY] = 1; //mine a wall
-                            mineFunction(minerX, minerY);
-                        }
-                        minerY = minerY + randomY;  //move in Y
-                        if (minerY > mapWidth || minerY < 0) {    //if it hits the edge of map, quit
-                            break;
-                        } else {
-                            //main.cave.mapArray[minerX][minerY] = 1; //mine a wall
-                            mineFunction(minerX, minerY);
-                        }
+                console.log(mapArrayCropped.length, mapArrayCropped[0].length);
+                //floodfill check
+                var floodFillCheckArray = JSON.parse(JSON.stringify(mapArrayCropped)),     //deep copy the cropped array to check and modify for fill
+                    floodFillCount,             //count how many cells are filled (how big is the cave?)
+                    floodFillFunction,      //does the flood fill
+                    floodFillCheckFunction; //calculates the result
+                floodFillFunction = function (x, y) {   //define floodfill function
+                    if (floodFillCheckArray[x][y] === 99) {     //if the cell to check has already been checked, quit
+                        return;
                     }
-                }
-                //TODO: crop the cave array
-                //find left-most cell
-                var leftX, rightX, topY, botY, breakCheck;
-                breakCheck = false;
-                for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
-                    for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
-                        if (main.cave.mapArray[i][j] !== 0) {
-                            leftX = i;
-                            breakCheck = true;
-                            break;
+                    if (floodFillCheckArray[x][y] !== 1) {      //if the cell isn't initially empty, quit
+                        return;
+                    }
+                    var floodFillQueue = [];        //create empty queue array
+                    floodFillCheckArray[x][y] = 99; //set the cell to checked (since it has neither been checked nor is it a wall)
+                    floodFillQueue.push([x, y]);    //push 2d array, coordinates for x/y for each cell to check
+                    while (floodFillQueue.length > 0) { //if there are nodes to remove from queue
+                        var temp = floodFillQueue[0],
+                            floodcheckx = temp[0],
+                            floodchecky = temp[1];
+                        floodFillQueue.shift();
+                        if (floodFillCheckArray[floodcheckx - 1][floodchecky] === 1) {  //check left
+                            floodFillQueue.push([floodcheckx - 1, floodchecky]);
+                            floodFillCheckArray[floodcheckx - 1][floodchecky] = 99;
                         }
-                    }
-                    if (breakCheck) {
-                        break;
-                    }
-                }
-                //find right-most cell
-                breakCheck = false;
-                for (i = mapWidth - 1; i > -1; i -= 1) {     //start from right, go to left
-                    for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
-                        if (main.cave.mapArray[i][j] !== 0) {
-                            rightX = i;
-                            breakCheck = true;
-                            break;
+                        if (floodFillCheckArray[floodcheckx + 1][floodchecky] === 1) {  //check right
+                            floodFillQueue.push([floodcheckx + 1, floodchecky]);
+                            floodFillCheckArray[floodcheckx + 1][floodchecky] = 99;
+                        }
+                        if (floodFillCheckArray[floodcheckx][floodchecky - 1] === 1) {  //check up
+                            floodFillQueue.push([floodcheckx, floodchecky - 1]);
+                            floodFillCheckArray[floodcheckx][floodchecky - 1] = 99;
+                        }
+                        if (floodFillCheckArray[floodcheckx][floodchecky + 1] === 1) {  //check down
+                            floodFillQueue.push([floodcheckx, floodchecky + 1]);
+                            floodFillCheckArray[floodcheckx][floodchecky + 1] = 99;
                         }
                     }
-                    if (breakCheck) {
-                        break;
-                    }
-                }
-                //find top-most cell
-                breakCheck = false;
-                for (j = 0; j < mapWidth; j += 1) {     //start from top, go to bottom
-                    for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
-                        if (main.cave.mapArray[i][j] !== 0) {
-                            topY = j;
-                            main.cave.startX = i;
-                            main.cave.startY = j;
-                            breakCheck = true;
-                            break;
+                };  //define the floodfill function
+                floodFillFunction(main.cave.startX, main.cave.startY);  //perform the floodfill function
+                
+                floodFillCount = 0;     //set fill count to 0
+                floodFillCheckFunction = function () {
+                    for (i = 0; i < floodFillCheckArray.length; i += 1) {   //calculate how big the cave is
+                        for (j = 0; j < floodFillCheckArray[0].length; j += 1) {
+                            if (floodFillCheckArray[i][j] === 99) {
+                                floodFillCount += 1;
+                            }
                         }
                     }
-                    if (breakCheck) {
-                        break;
-                    }
+                };      //define the floodfill check function
+                floodFillCheckFunction();       //perform the floodfill check
+                
+                //TODO reject if count is less than the map size limit
+                console.log( floodFillCount, Math.sqrt(floodFillCount));
+                var mapSizelimit = 75000;       //define the desired minimum map size
+                if (floodFillCount < mapSizelimit) {       //reject the map!
+                    console.log("map too small!  Retrying...");
+                    main.cave.initialized = false;
+                } else {    //accept the map!
+                    //replace the map array with the cropped one
+                    main.cave.mapArray = mapArrayCropped;
+                    console.log(mapArrayCropped);
+                    console.log("map done");
+                    main.cave.initialized = true;
                 }
-                //find bot-most cell
-                breakCheck = false;
-                for (j = mapWidth - 1; j > -1; j -= 1) {     //start from bottom, go to top
-                    for (i = 0; i < mapWidth; i += 1) {     //start from left, go to right
-                        if (main.cave.mapArray[i][j] !== 0) {
-                            botY = j;
-                            breakCheck = true;
-                            break;
-                        }
-                    }
-                    if (breakCheck) {
-                        break;
-                    }
-                }
-                //crop the array using left/right/top/bot values
-                var croppedArray;
-                croppedArray = main.cave.mapArray.slice(leftX, rightX);
-                for (i = 0; i < (croppedArray.length); i += 1) {
-                    croppedArray[i] = croppedArray[i].slice(topY, botY);
-                }
-                //TODO replace the map array with the cropped one
-                main.cave.mapArray = croppedArray;
-                console.log(croppedArray);
-                console.log("map done");
-            },
+            },  //initializes the map array
             
             initialize: function () {
                 main.cave.cameraXMax = main.cave.mapWidth - main.cave.cameraWidth;  //define xmax, ymax based on width
                 main.cave.cameraYMax = main.cave.mapWidth - main.cave.cameraHeight;
                 
-                main.cave.initializeMap();      //create the map array to reference
+                while (!main.cave.initialized) {    //if cave is not initialized, initialize it
+                    main.cave.initializeMap();      //create the map array to reference
+                }
                 
                 //main.cave.cameraX = main.cave.startX - 0.5 * main.cave.cameraWidth;
                 //main.cave.cameraY = main.cave.startY - 0.5 * main.cave.cameraHeight;
-            }
+            }   //initializes the cave.  calls to init the map.
         };
         
         main.objectCavescreenLogic = function () {
@@ -414,9 +570,23 @@ main.pipeline = function () {
                 //create canvas element
                 canvas = document.createElement("canvas");
                 canvas.id = "cavescreenCanvas";
-                canvas.width = 1000;
-                canvas.height = 1000;
+                canvas.width = main.cave.mapArray.length;
+                canvas.height = main.cave.mapArray[0].length;
                 canvas.style.border = '1px solid #F00';
+                document.addEventListener("keypress", function (e) {
+                    if (e.keyCode === 109) {    //toggle map with "M" key
+                        if (main.cave.showMap) {
+                            main.cave.showMap = false;
+                            console.log(main.cave.showMap);
+                            return;
+                        }
+                        if (!main.cave.showMap) {
+                            main.cave.showMap = true;
+                            console.log(main.cave.showMap);
+                            return;
+                        }
+                    }
+                });
                 element_cavescreen.appendChild(canvas);
                 
                 element_cavescreen.logicInitialized = true;
@@ -428,11 +598,12 @@ main.pipeline = function () {
                 canvas, imageData, context, pixelIndex,
                 red, green, blue, alpha,            //color values for imageData
                 cellX, cellY,   //X Y location on imageData
-                cameraX, cameraY, cameraWidth, cameraHeight,    //camera location on map array of cave
+                cameraWidth, cameraHeight,    //camera location on map array of cave
                 mapCheckCell, checkX, checkY, checkOOB;           //value of the corresponding cell in the map array
             if (element_cavescreen.logicInitialized) {
                 if (!element_cavescreen.renderInitialized) {
                     canvas = document.getElementById("cavescreenCanvas");
+                    canvas.style.position = "fixed";
                     context = canvas.getContext("2d");
                     imageData = context.createImageData(main.cave.cameraWidth, main.cave.cameraHeight);
                     main.cave.canvas = canvas;
@@ -445,58 +616,80 @@ main.pipeline = function () {
                     context = main.cave.context;
                     imageData = main.cave.imagedata;
                     //modify imageData based on cave camera
-                    cameraX = main.cave.cameraX;
-                    cameraY = main.cave.cameraY;
                     cameraWidth = main.cave.cameraWidth;
                     cameraHeight = main.cave.cameraHeight;
                     //console.log("weee ", context, imageData);
-                    for (cellX = 0; cellX < cameraWidth; cellX += 1) {      //from left to right, for width of camera
-                        for (cellY = 0; cellY < cameraHeight; cellY += 1) {     //from top to bottom, for height of camera
-                            pixelIndex = (cellY * cameraWidth + cellX) * 4;       //formula for getting pixel index in imagedata
-                            checkX = cameraX + cellX;       //location in map array to check X
-                            checkY = cameraY + cellY;       //location in map array to check Y
-                            if (checkX > main.cave.mapArray.length - 1 || checkY > main.cave.mapArray[0].length - 1) {  //if it's out of bounds, flag checkOOB
-                                checkOOB = true;
-                            } else {
-                                checkOOB = false;
-                            }
-                            if (checkOOB) {
-                                mapCheckCell = -1;
-                            } else {
-                                mapCheckCell = main.cave.mapArray[checkX][checkY];    //check the map array cell for each camera pixel
-                                //mapCheckCell = main.cave.croppedmapArray[checkX][checkY]
-                            }
-                            if (mapCheckCell === -1) {   //if cell is OOB
-                                red = 240;
-                                green = 240;
-                                blue = 240;
-                                alpha = 255;
-                            }
-                            if (mapCheckCell === 0) {   //if cell is a wall
-                                red = 255;
-                                green = 255;
-                                blue = 255;
-                                alpha = 255;
-                            }
-                            if (mapCheckCell === 1) {   //if cell is empty
-                                red = 0;
-                                green = 0;
-                                blue = 0;
-                                alpha = 255;
-                            }
-                            //edit the imagedata based on cell data
-                            imageData.data[pixelIndex] = red;
-                            imageData.data[pixelIndex + 1] = green;
-                            imageData.data[pixelIndex + 2] = blue;
-                            imageData.data[pixelIndex + 3] = alpha;
-                        }
+                    if (!main.cave.showMap) {
+                        canvas.style.display = "none";
                     }
-                    //draw it on canvas
-                    context.putImageData(imageData, 0, 0);
+                    if (main.cave.showMap) {    //only draw if showMap is true
+                        canvas.style.display = "inline";
+                        for (cellX = 0; cellX < cameraWidth; cellX += 1) {      //from left to right, for width of camera
+                            for (cellY = 0; cellY < cameraHeight; cellY += 1) {     //from top to bottom, for height of camera
+                                pixelIndex = (cellY * cameraWidth + cellX) * 4;       //formula for getting pixel index in imagedata
+                                checkX = cellX;       //location in map array to check X
+                                checkY = cellY;       //location in map array to check Y
+                                if (checkX > main.cave.mapArray.length - 1 || checkY > main.cave.mapArray[0].length - 1) {  //if it's out of bounds, flag checkOOB
+                                    checkOOB = true;
+                                } else {
+                                    checkOOB = false;
+                                }
+                                if (checkOOB) {
+                                    mapCheckCell = -1;
+                                } else {
+                                    mapCheckCell = main.cave.mapArray[checkX][checkY];    //check the map array cell for each camera pixel
+                                    //mapCheckCell = main.cave.croppedmapArray[checkX][checkY]
+                                }
+                                if (mapCheckCell === -1) {   //if cell is OOB
+                                    red = 240;
+                                    green = 240;
+                                    blue = 240;
+                                    alpha = 255;
+                                }
+                                if (mapCheckCell === 0) {   //if cell is a wall
+                                    red = 255;
+                                    green = 255;
+                                    blue = 255;
+                                    alpha = 255;
+                                }
+                                if (mapCheckCell === 1) {   //if cell is empty
+                                    red = 0;
+                                    green = 0;
+                                    blue = 0;
+                                    alpha = 255;
+                                }
+                                //edit the imagedata based on cell data
+                                imageData.data[pixelIndex] = red;
+                                imageData.data[pixelIndex + 1] = green;
+                                imageData.data[pixelIndex + 2] = blue;
+                                imageData.data[pixelIndex + 3] = alpha;
+                            }
+                        }
+                        //draw it on canvas
+                        context.putImageData(imageData, 0, 0);
+                    }
+                    
                 }
             }
         };
         
+        main.objectGamescreenLogic = function () {
+            var element_gamescreen = document.getElementsByClassName("gamescreen")[0];
+            if (!element_gamescreen.logicInitialized) {
+                //TODO create tilemap blah blah blah
+                element_gamescreen.logicInitialized = true;
+            }
+        };
+        
+        main.objectGamescreenRender = function () {
+            var element_gamescreen = document.getElementsByClassName("gamescreen")[0];
+            if (element_gamescreen.logicInitialized) {
+                if (!element_gamescreen.renderInitialized) {
+                    //TODO create render for tilemap blah blah blah
+                    element_gamescreen.renderInitialized = true;
+                }
+            }
+        };
         //endregion
         
         //@@@@@@@@@@@ declare game ready @@@@@@@@@@@
