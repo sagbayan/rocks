@@ -262,12 +262,14 @@ main.pipeline = function () {
             initialized: false,
             mapArray: [],
             mapWidth: 1000,     //size of map array.  map is square, so size is width^2
-            cameraWidth: 1000,   //viewport of camera
+            cameraWidth: 1000,   //viewport of camera in pixels
             cameraHeight: 1000,
-            cameraX: 0,         //location of camera
+            cameraX: 0,         //location of camera in pixels
             cameraY: 0,
+            cameraXMin: 0,
             cameraXMax: 0,      //will be recalculated in initialize()
             cameraYMax: 0,
+            cameraYMin: 0,
             startX: 0,          //start location (top of cave) will be calculated
             startY: 0,
             tilemapTileSize: 50,
@@ -545,15 +547,16 @@ main.pipeline = function () {
             },  //initializes the map array
             
             initialize: function () {
-                main.cave.cameraXMax = main.cave.mapWidth - main.cave.cameraWidth;  //define xmax, ymax based on width
-                main.cave.cameraYMax = main.cave.mapWidth - main.cave.cameraHeight;
-                
                 while (!main.cave.initialized) {    //if cave is not initialized, initialize it
                     main.cave.initializeMap();      //create the map array to reference
                 }
                 
-                //main.cave.cameraX = main.cave.startX - 0.5 * main.cave.cameraWidth;
-                //main.cave.cameraY = main.cave.startY - 0.5 * main.cave.cameraHeight;
+                main.cave.cameraXMax = main.cave.mapArray.length * main.cave.tilemapTileSize - main.cave.cameraWidth;  //define xmax, ymax based on width
+                main.cave.cameraYMax = main.cave.mapArray[0].length * main.cave.tilemapTileSize - main.cave.cameraHeight;
+                main.cave.cameraXMin = main.cave.tilemapTileSize;   //leave one tile on outside for render
+                main.cave.cameraYMin = main.cave.tilemapTileSize;
+                main.cave.cameraX = main.cave.startX * main.cave.tilemapTileSize - 0.5 * main.cave.cameraWidth;
+                main.cave.cameraY = main.cave.startY * main.cave.tilemapTileSize - 0.5 * main.cave.cameraHeight;
             }   //initializes the cave.  calls to init the map.
         };
         
@@ -572,7 +575,7 @@ main.pipeline = function () {
                 canvas.id = "cavescreenCanvas";
                 canvas.width = main.cave.mapArray.length;
                 canvas.height = main.cave.mapArray[0].length;
-                canvas.style.border = '1px solid #F00';
+                //canvas.style.border = '1px solid #F00';
                 document.addEventListener("keypress", function (e) {
                     if (e.keyCode === 109) {    //toggle map with "M" key
                         if (main.cave.showMap) {
@@ -598,35 +601,34 @@ main.pipeline = function () {
                 canvas, imageData, context, pixelIndex,
                 red, green, blue, alpha,            //color values for imageData
                 cellX, cellY,   //X Y location on imageData
-                cameraWidth, cameraHeight,    //camera location on map array of cave
+                mapWidth, mapHeight,    //camera location on map array of cave
                 mapCheckCell, checkX, checkY, checkOOB;           //value of the corresponding cell in the map array
             if (element_cavescreen.logicInitialized) {
                 if (!element_cavescreen.renderInitialized) {
                     canvas = document.getElementById("cavescreenCanvas");
                     canvas.style.position = "fixed";
                     context = canvas.getContext("2d");
-                    imageData = context.createImageData(main.cave.cameraWidth, main.cave.cameraHeight);
-                    main.cave.canvas = canvas;
-                    main.cave.context = context;
-                    main.cave.imagedata = imageData;
+                    imageData = context.createImageData(main.cave.mapArray.length, main.cave.mapArray[0].length);
+                    main.cave.canvasMap = canvas;
+                    main.cave.canvasMapImagedata = imageData;
                     
                     element_cavescreen.renderInitialized = true;
                 } else {
-                    canvas = main.cave.canvas;
-                    context = main.cave.context;
-                    imageData = main.cave.imagedata;
+                    canvas = main.cave.canvasMap;
+                    context = canvas.getContext("2d");
+                    imageData = main.cave.canvasMapImagedata;
                     //modify imageData based on cave camera
-                    cameraWidth = main.cave.cameraWidth;
-                    cameraHeight = main.cave.cameraHeight;
+                    mapWidth = main.cave.mapArray.length;
+                    mapHeight = main.cave.mapArray[0].length;
                     //console.log("weee ", context, imageData);
                     if (!main.cave.showMap) {
                         canvas.style.display = "none";
                     }
                     if (main.cave.showMap) {    //only draw if showMap is true
                         canvas.style.display = "inline";
-                        for (cellX = 0; cellX < cameraWidth; cellX += 1) {      //from left to right, for width of camera
-                            for (cellY = 0; cellY < cameraHeight; cellY += 1) {     //from top to bottom, for height of camera
-                                pixelIndex = (cellY * cameraWidth + cellX) * 4;       //formula for getting pixel index in imagedata
+                        for (cellX = 0; cellX < mapWidth; cellX += 1) {      //from left to right, for width of camera
+                            for (cellY = 0; cellY < mapHeight; cellY += 1) {     //from top to bottom, for height of camera
+                                pixelIndex = (cellY * mapWidth + cellX) * 4;       //formula for getting pixel index in imagedata
                                 checkX = cellX;       //location in map array to check X
                                 checkY = cellY;       //location in map array to check Y
                                 if (checkX > main.cave.mapArray.length - 1 || checkY > main.cave.mapArray[0].length - 1) {  //if it's out of bounds, flag checkOOB
@@ -641,9 +643,9 @@ main.pipeline = function () {
                                     //mapCheckCell = main.cave.croppedmapArray[checkX][checkY]
                                 }
                                 if (mapCheckCell === -1) {   //if cell is OOB
-                                    red = 240;
-                                    green = 240;
-                                    blue = 240;
+                                    red = 0;
+                                    green = 0;
+                                    blue = 255;
                                     alpha = 255;
                                 }
                                 if (mapCheckCell === 0) {   //if cell is a wall
@@ -654,6 +656,15 @@ main.pipeline = function () {
                                 }
                                 if (mapCheckCell === 1) {   //if cell is empty
                                     red = 0;
+                                    green = 0;
+                                    blue = 0;
+                                    alpha = 255;
+                                }
+                                //find the camera X,Y, color it red
+                                var mapX = Math.floor(main.cave.cameraX / main.cave.tilemapTileSize),
+                                    mapY = Math.floor(main.cave.cameraY / main.cave.tilemapTileSize);
+                                if (checkX === mapX && checkY === mapY) {
+                                    red = 255;
                                     green = 0;
                                     blue = 0;
                                     alpha = 255;
@@ -674,19 +685,43 @@ main.pipeline = function () {
         };
         
         main.objectGamescreenLogic = function () {
-            var element_gamescreen = document.getElementsByClassName("gamescreen")[0];
+            var element_gamescreen = document.getElementsByClassName("gamescreen")[0],
+                canvas,
+                mapX, mapY,         //where on the map array is the camera
+                cameraX, cameraY,   //camerax, cameray
+                tileAtlas, tileSize;
             if (!element_gamescreen.logicInitialized) {
                 //TODO create tilemap blah blah blah
-                element_gamescreen.logicInitialized = true;
+                if (main.cave.initialized) {
+                    canvas = document.createElement("canvas");
+                    canvas.width = main.cave.cameraWidth;
+                    canvas.height = main.cave.cameraHeight;
+                    main.cave.canvasGame = canvas;
+                    element_gamescreen.appendChild(canvas);
+                    
+                    element_gamescreen.logicInitialized = true;
+                }
+            } else {
+                canvas = main.cave.canvasGame;
+                tileAtlas = getImage(main.cave.tilemapFilename);
+                tileSize = main.cave.tilemapTileSize;
+                cameraX = main.cave.cameraX;    //where is the camera
+                cameraY = main.cave.cameraY;
+                mapX = Math.floor(cameraX / tileSize);  //where on the map array is the camera
+                mapY = Math.floor(cameraY / tileSize);
             }
         };
         
         main.objectGamescreenRender = function () {
-            var element_gamescreen = document.getElementsByClassName("gamescreen")[0];
+            var element_gamescreen = document.getElementsByClassName("gamescreen")[0],
+                canvas, context;
             if (element_gamescreen.logicInitialized) {
                 if (!element_gamescreen.renderInitialized) {
                     //TODO create render for tilemap blah blah blah
                     element_gamescreen.renderInitialized = true;
+                } else {
+                    canvas = main.cave.canvasGame;
+                    context = canvas.getContext("2d");
                 }
             }
         };
