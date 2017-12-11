@@ -40,7 +40,8 @@ var assets = {
     domainImages: "res/images/",     //domain path to load images
     arrayImagesFilenames: [         //array that holds filename strings for image files
         "test_1.png",
-        "test_2.png"
+        "test_2.png",
+        "tileset_cave.png"
     ],
     arrayImages: [],
     domainSound: "res/sounds/",      //domain path to load sounds
@@ -273,7 +274,7 @@ main.pipeline = function () {
             startX: 0,          //start location (top of cave) will be calculated
             startY: 0,
             tilemapTileSize: 50,
-            tilemapFilename: "tilemap_cave.png",
+            tilemapFilename: "tileset_cave.png",
             showMap: false,     //flag that reveals map
             
             initializeMap: function () {
@@ -626,8 +627,9 @@ main.pipeline = function () {
                     }
                     if (main.cave.showMap) {    //only draw if showMap is true
                         canvas.style.display = "inline";
-                        for (cellX = 0; cellX < mapWidth; cellX += 1) {      //from left to right, for width of camera
-                            for (cellY = 0; cellY < mapHeight; cellY += 1) {     //from top to bottom, for height of camera
+                        //loop through map array
+                        for (cellX = 0; cellX < mapWidth; cellX += 1) {      //from left to right, for width of map
+                            for (cellY = 0; cellY < mapHeight; cellY += 1) {     //from top to bottom, for height of map
                                 pixelIndex = (cellY * mapWidth + cellX) * 4;       //formula for getting pixel index in imagedata
                                 checkX = cellX;       //location in map array to check X
                                 checkY = cellY;       //location in map array to check Y
@@ -686,42 +688,97 @@ main.pipeline = function () {
         
         main.objectGamescreenLogic = function () {
             var element_gamescreen = document.getElementsByClassName("gamescreen")[0],
-                canvas,
-                mapX, mapY,         //where on the map array is the camera
-                cameraX, cameraY,   //camerax, cameray
-                tileAtlas, tileSize;
+                i, j, canvas, context,
+                mapArray, mapX, mapY,         //where on the map array is the camera
+                cameraX, cameraY, cameraWidth, cameraHeight,  //camerax, cameray
+                tileCanvas, tileAtlas, tileSize, tileStartX, tileStartY;
             if (!element_gamescreen.logicInitialized) {
                 //TODO create tilemap blah blah blah
                 if (main.cave.initialized) {
-                    canvas = document.createElement("canvas");
+                    canvas = document.createElement("canvas");  //create the canvas for the game screen
                     canvas.width = main.cave.cameraWidth;
                     canvas.height = main.cave.cameraHeight;
+                    canvas.style.border = "thick solid #0000FF";
                     main.cave.canvasGame = canvas;
                     element_gamescreen.appendChild(canvas);
+                    
+                    tileCanvas = document.createElement("canvas");  //offscreen canvas that holds the constructed tile image. draw first, then draw from this and paste to the main canvas object
+                    tileCanvas.width = main.cave.cameraWidth + 2 * main.cave.tilemapTileSize;   //make it 2 tiles larger than the camera canvas
+                    tileCanvas.height = main.cave.cameraHeight + 2 * main.cave.tilemapTileSize;
+                    main.cave.canvasTile = tileCanvas;
+                    
+                    document.addEventListener("keydown", function (e) {    //control the camera XY with arrow keys
+                        if (e.keyCode === 38) {    //up
+                            if (main.cave.cameraY > main.cave.cameraYMin) {
+                                main.cave.cameraY -= 15;
+                            }
+                        }
+                        if (e.keyCode === 40) {    //down
+                            if (main.cave.cameraY < main.cave.cameraYMax) {
+                                main.cave.cameraY += 15;
+                            }
+                        }
+                        if (e.keyCode === 37) {    //left
+                            if (main.cave.cameraX > main.cave.cameraXMin) {
+                                main.cave.cameraX -= 15;
+                            }
+                        }
+                        if (e.keyCode === 39) {    //right
+                            if (main.cave.cameraX < main.cave.cameraXMax) {
+                                main.cave.cameraX += 15;
+                            }
+                        }
+                    });
                     
                     element_gamescreen.logicInitialized = true;
                 }
             } else {
-                canvas = main.cave.canvasGame;
+                tileCanvas = main.cave.canvasTile;
                 tileAtlas = getImage(main.cave.tilemapFilename);
                 tileSize = main.cave.tilemapTileSize;
+                mapArray = main.cave.mapArray;
                 cameraX = main.cave.cameraX;    //where is the camera
                 cameraY = main.cave.cameraY;
-                mapX = Math.floor(cameraX / tileSize);  //where on the map array is the camera
+                cameraWidth = main.cave.cameraWidth;    //how big is the camera.  divide by tilesize to figure out how many tiles wide it is
+                cameraHeight = main.cave.cameraHeight;
+                mapX = Math.floor(cameraX / tileSize);  //where on the map array is the camera (tells what tile to draw, basically)
                 mapY = Math.floor(cameraY / tileSize);
+                tileStartX = tileSize - (cameraX % tileSize);    //where to start laying down the tiles in relation to how cameraX/Y lines up with map array.  canvas is 2 tiles larger than the camera.
+                tileStartY = tileSize - (cameraY % tileSize);
+                
+                context = tileCanvas.getContext("2d");
+                for (i = -1; i < (Math.floor(cameraWidth / tileSize) + 2); i += 1) {   //loop through all the tiles you need to draw
+                    for (j = -1; j < (Math.floor(cameraHeight / tileSize) + 2); j += 1) {
+                        //draw tiles based on what the mapArray tells you to draw
+                        if (mapArray[mapX + i][mapY + j] === 0) {   //if wall
+                            context.drawImage(tileAtlas, 0, 0, tileSize, tileSize, tileStartX + (i * tileSize), tileStartY + (j * tileSize), tileSize, tileSize);
+                        }
+                        if (mapArray[mapX + i][mapY + j] === 1) {   //if empty
+                            context.drawImage(tileAtlas, 50, 0, tileSize, tileSize, tileStartX + (i * tileSize), tileStartY + (j * tileSize), tileSize, tileSize);
+                        }
+                    }
+                }
             }
         };
         
         main.objectGamescreenRender = function () {
             var element_gamescreen = document.getElementsByClassName("gamescreen")[0],
-                canvas, context;
+                canvas, context,
+                //cellX, cellY,
+                //mapX, mapY,         //where on the map array is the camera
+                //cameraX, cameraY,   //camerax, cameray
+                tileCanvas;
             if (element_gamescreen.logicInitialized) {
                 if (!element_gamescreen.renderInitialized) {
                     //TODO create render for tilemap blah blah blah
                     element_gamescreen.renderInitialized = true;
                 } else {
                     canvas = main.cave.canvasGame;
+                    tileCanvas = main.cave.canvasTile;
                     context = canvas.getContext("2d");
+                    
+                    //pull from offscreen tilecanvas and just draw it where it's supposed to be
+                    context.drawImage(tileCanvas, 0, 0);
                 }
             }
         };
